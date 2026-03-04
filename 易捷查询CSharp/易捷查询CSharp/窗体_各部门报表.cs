@@ -13,6 +13,9 @@ namespace 易捷查询CSharp
 {
     public partial class 窗体_各部门报表 : Form
     {
+        // 易捷集团数据库连接字符串
+        private const string 易捷集团连接字符串 = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=36.138.130.91)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=dbms)));User Id=fgrp;Password=kuke.fgrp;";
+
         public 窗体_各部门报表()
         {
             InitializeComponent();
@@ -20,37 +23,35 @@ namespace 易捷查询CSharp
 
         private void 按钮_查询_Click(object sender, EventArgs e)
         {
+            // 简化SQL，直接从grp_ord_data查询，不使用v_ord_processes视图
+            // 使用 ordnum 替代 accnum 计算面积
             var sql = @"
 select tp, agntcde, nvl(sum(accamt), 0) as 金额, nvl(sum(area), 0) as 面积, count(*) as 单数
 from
-(SELECT agntcde, accamt, acreage * accnum as area,
+(SELECT agntcde, accamt, acreage * ordnum as area,
 case crrcde when '1Z' then
-   case  (select count(*) from v_ord_processes where prctyp = '09' and serial = t.serial and orgcde = t.orgcde)
-   when 0 then '1Z'
-   ELSE
-     objtyp
-   end
+   '1Z'
 else
-                objtyp
-             end tp
-              from v_ord t where status = 'Y' and instr(serial,'.')= 0";
+    objtyp
+end tp
+from grp_ord_data where status = 'Y'";
 
-            sql += " and to_char(ptdate,'yyyy-MM-dd')>='" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "'";
-            sql += " and to_char(ptdate,'yyyy-MM-dd')<'" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "'";
+            sql += " and created >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
+            sql += " and created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
 
             sql += ") group by agntcde, tp";
 
             List<tempData> tempDatas = new List<tempData>();
-            foreach (var item in DatabaseInfos.GetDatabaseInfos()) {
-                try {
-                    using (var helper = SqlHelperFactory.OpenDatabase(item.GetConnString(), SqlType.Oracle)) {
-                        var list = helper.Select<tempData>(sql);
-                        tempDatas.AddRange(list);
-                    }
-                } catch (Exception ex) {
-                    MessageBox.Show(item.FactoryName + "连接出错了：" + ex.Message);
+            // 直接从集团服务器查询，不再循环遍历多个数据库
+            try {
+                using (var helper = SqlHelperFactory.OpenDatabase(易捷集团连接字符串, SqlType.Oracle)) {
+                    var list = helper.Select<tempData>(sql);
+                    tempDatas.AddRange(list);
                 }
+            } catch (Exception ex) {
+                MessageBox.Show("集团服务器连接出错：" + ex.Message);
             }
+            
             显示结果(tempDatas);
 
         }
@@ -141,7 +142,6 @@ else
             }
             return 类别;
         }
-
 
 
 

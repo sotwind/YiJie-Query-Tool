@@ -31,6 +31,11 @@ namespace 易捷查询CSharp
             new 窗体_利润统计 ().Show();
         }
 
+        private void 按钮_报价差额统计_Click(object sender, EventArgs e)
+        {
+            new 窗体_报价差额统计().Show();
+        }
+
         private void 窗体_功能列表_Load(object sender, EventArgs e)
         {
 
