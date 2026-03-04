@@ -14,6 +14,9 @@ namespace 易捷查询CSharp
 {
     public partial class 窗体_销售员图 : Form
     {
+        // 易捷集团数据库连接字符串
+        private const string 易捷集团连接字符串 = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=36.138.130.91)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=dbms)));User Id=fgrp;Password=kuke.fgrp;";
+
         public 窗体_销售员图() {
             InitializeComponent();
         }
@@ -38,12 +41,12 @@ namespace 易捷查询CSharp
         private void 按钮_查询_Click(object sender, EventArgs e) {
             string sql = null;
             if (单选_显示业务员.Checked) {
-                sql = "select objtyp, agntcde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage*accnum),0) as 面积, count(*) as 单数 from v_ord where status='Y'";
+                sql = "select objtyp, agntcde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage * ordnum),0) as 面积, count(*) as 单数 from grp_ord_data where status='Y'";
             } else {
-                sql = "select objtyp, asscde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage*accnum),0) as 面积, count(*) as 单数 from v_ord where status='Y'";
+                sql = "select objtyp, asscde as agntcde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage * ordnum),0) as 面积, count(*) as 单数 from grp_ord_data where status='Y'";
             }
-            sql += " and ptdate >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
-            sql += " and ptdate < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
+            sql += " and created >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
+            sql += " and created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
 
             var tmpstr = "";
             if (列表_业务员.CheckedItems.Count == 0) {
@@ -109,17 +112,17 @@ namespace 易捷查询CSharp
             } else {
                 sql += " group by asscde, objtyp order by asscde";
             }
+            
             List<tempData> tempDatas = new List<tempData>();
-            foreach (var item in DatabaseInfos.GetDatabaseInfos()) {
-                try {
-                    using (var helper = SqlHelperFactory.OpenDatabase(item.GetConnString(), SqlType.Oracle)) {
-                        var list = helper.Select<tempData>(sql);
-                        tempDatas.AddRange(list);
-                    }
-                } catch (Exception ex) {
-                    Debug.Print("SQL执行失败，语句：" + sql);
-                    MessageBox.Show(item.FactoryName + "连接出错了：" + ex.Message);
+            // 直接从集团服务器查询，不再循环遍历多个数据库
+            try {
+                using (var helper = SqlHelperFactory.OpenDatabase(易捷集团连接字符串, SqlType.Oracle)) {
+                    var list = helper.Select<tempData>(sql);
+                    tempDatas.AddRange(list);
                 }
+            } catch (Exception ex) {
+                Debug.Print("SQL执行失败，语句：" + sql);
+                MessageBox.Show("集团服务器连接出错：" + ex.Message);
             }
 
             显示结果(tempDatas);
@@ -260,7 +263,6 @@ namespace 易捷查询CSharp
         {
             public string objtyp { get; set; }
             public string agntcde { get; set; }
-            public string asscde { get; set; }
             public decimal 金额 { get; set; }
             public decimal 面积 { get; set; }
             public int 单数 { get; set; }
@@ -296,7 +298,6 @@ namespace 易捷查询CSharp
             public decimal 数码纸箱金额 { get; set; }
             public decimal 数码纸箱面积 { get; set; }
         }
-
 
 
 

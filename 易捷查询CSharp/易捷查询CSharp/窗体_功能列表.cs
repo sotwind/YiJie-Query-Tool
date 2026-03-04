@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -24,6 +24,11 @@ namespace 易捷查询CSharp
         private void 按钮_各部门报表_Click(object sender, EventArgs e)
         {
             new 窗体_各部门报表().Show();
+        }
+
+        private void 按钮_报价差额统计_Click(object sender, EventArgs e)
+        {
+            new 窗体_报价差额统计().Show();
         }
 
         private void 窗体_功能列表_Load(object sender, EventArgs e)

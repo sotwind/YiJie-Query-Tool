@@ -2,15 +2,8 @@
 {
     partial class 窗体_功能列表
     {
-        /// <summary>
-        /// 必需的设计器变量。
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// 清理所有正在使用的资源。
-        /// </summary>
-        /// <param name="disposing">如果应释放托管资源，为 true；否则为 false。</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null)) {
@@ -21,16 +14,23 @@
 
         #region Windows 窗体设计器生成的代码
 
-        /// <summary>
-        /// 设计器支持所需的方法 - 不要修改
-        /// 使用代码编辑器修改此方法的内容。
-        /// </summary>
         private void InitializeComponent()
         {
+            this.按钮_报价差额统计 = new System.Windows.Forms.Button();
             this.按钮_各部门报表 = new System.Windows.Forms.Button();
             this.按钮_销售员图 = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
+            // 
+            // 按钮_报价差额统计
+            // 
+            this.按钮_报价差额统计.Location = new System.Drawing.Point(12, 70);
+            this.按钮_报价差额统计.Name = "按钮_报价差额统计";
+            this.按钮_报价差额统计.Size = new System.Drawing.Size(75, 23);
+            this.按钮_报价差额统计.TabIndex = 5;
+            this.按钮_报价差额统计.Text = "报价差额";
+            this.按钮_报价差额统计.UseVisualStyleBackColor = true;
+            this.按钮_报价差额统计.Click += new System.EventHandler(this.按钮_报价差额统计_Click);
             // 
             // 按钮_各部门报表
             // 
@@ -67,8 +67,9 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(349, 171);
+            this.ClientSize = new System.Drawing.Size(349, 200);
             this.Controls.Add(this.label1);
+            this.Controls.Add(this.按钮_报价差额统计);
             this.Controls.Add(this.按钮_各部门报表);
             this.Controls.Add(this.按钮_销售员图);
             this.Name = "窗体_功能列表";
@@ -82,9 +83,9 @@
 
         #endregion
 
+        internal System.Windows.Forms.Button 按钮_报价差额统计;
         internal System.Windows.Forms.Button 按钮_各部门报表;
         internal System.Windows.Forms.Button 按钮_销售员图;
         private System.Windows.Forms.Label label1;
     }
 }
-
