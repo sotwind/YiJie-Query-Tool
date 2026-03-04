@@ -19,6 +19,9 @@ namespace Com.Ekyb.CrossFactoryOrder.Common
             _databaseInfos.Add(new DatabaseInfo("临海", "老系统", "36.137.213.189", 1521, "dbms", "ejsh", "read", "ejsh.read"));
             // _databaseInfos.Add(new DatabaseInfo("温森新系统", "新系统", "db.05.forestpacking.com", 1521, "dbms", "ferp", "only", "b0003.only"));
             _databaseInfos.Add(new DatabaseInfo("温森新系统", "新系统", "db.05.forestpacking.com", 1521, "dbms", "ferp", "read", "ejsh.read"));
+            
+            // 易捷集团服务器（用于获取部门和业务员数据）
+            _databaseInfos.Add(new DatabaseInfo("易捷集团", "老系统", "36.138.130.91", 1521, "dbms", "fgrp", "fgrp", "kuke.fgrp"));
         }
 
         public static List<DatabaseInfo> GetDatabaseInfos()

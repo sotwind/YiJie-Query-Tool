@@ -73,7 +73,7 @@
             this.Controls.Add(this.按钮_销售员图);
             this.Name = "窗体_功能列表";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "易捷查询 20260130";
+            this.Text = "易捷查询 20260304";
             this.Load += new System.EventHandler(this.窗体_功能列表_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
