@@ -1,4 +1,4 @@
-﻿namespace 易捷查询CSharp
+namespace 易捷查询CSharp
 {
     partial class 窗体_功能列表
     {
@@ -29,6 +29,7 @@
         {
             this.按钮_各部门报表 = new System.Windows.Forms.Button();
             this.按钮_销售员图 = new System.Windows.Forms.Button();
+            this.按钮_利润统计 = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
@@ -52,6 +53,16 @@
             this.按钮_销售员图.UseVisualStyleBackColor = true;
             this.按钮_销售员图.Click += new System.EventHandler(this.按钮_销售员图_Click);
             // 
+            // 按钮_利润统计
+            // 
+            this.按钮_利润统计.Location = new System.Drawing.Point(12, 70);
+            this.按钮_利润统计.Name = "按钮_利润统计";
+            this.按钮_利润统计.Size = new System.Drawing.Size(75, 23);
+            this.按钮_利润统计.TabIndex = 6;
+            this.按钮_利润统计.Text = "利润统计";
+            this.按钮_利润统计.UseVisualStyleBackColor = true;
+            this.按钮_利润统计.Click += new System.EventHandler(this.按钮_利润统计_Click);
+            // 
             // label1
             // 
             this.label1.AutoSize = true;
@@ -67,13 +78,14 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(349, 171);
+            this.ClientSize = new System.Drawing.Size(349, 200);
             this.Controls.Add(this.label1);
+            this.Controls.Add(this.按钮_利润统计);
             this.Controls.Add(this.按钮_各部门报表);
             this.Controls.Add(this.按钮_销售员图);
             this.Name = "窗体_功能列表";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "易捷查询 20260130";
+            this.Text = "易捷查询 20260304";
             this.Load += new System.EventHandler(this.窗体_功能列表_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -84,6 +96,7 @@
 
         internal System.Windows.Forms.Button 按钮_各部门报表;
         internal System.Windows.Forms.Button 按钮_销售员图;
+        internal System.Windows.Forms.Button 按钮_利润统计;
         private System.Windows.Forms.Label label1;
     }
 }
