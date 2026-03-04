@@ -16,8 +16,6 @@ namespace 易捷查询CSharp
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             
-            模块_通用函数.查询箱型表();
-            
             Application.Run(new 窗体_功能列表());
         }
     }

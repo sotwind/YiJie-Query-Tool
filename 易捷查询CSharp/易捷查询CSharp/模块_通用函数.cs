@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿using Com.Ekyb.CrossFactoryOrder.Common;
+﻿﻿﻿﻿﻿using Com.Ekyb.CrossFactoryOrder.Common;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -201,51 +201,6 @@ ORDER BY dptNme
             }
             return dataTable;
         }
-
-        public static void 查询箱型表()
-        {
-            string connString = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=36.138.130.91)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=dbms)));User Id=fgrp;Password=kuke.fgrp";
-            try {
-                using (var helper = SqlHelperFactory.OpenDatabase(connString, SqlType.Oracle)) {
-                    var allTables = helper.Select<dynamic>("SELECT table_name FROM user_tables ORDER BY table_name");
-                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                    sb.AppendLine("所有表名：");
-                    foreach (var table in allTables) {
-                        sb.AppendLine(table.TABLE_NAME);
-                    }
-                    
-                    sb.AppendLine("\n\n可能包含箱型信息的表：");
-                    foreach (var table in allTables) {
-                        string tableName = table.TABLE_NAME.ToUpper();
-                        if (tableName.Contains("BOX") || tableName.Contains("CARTON") || 
-                            tableName.Contains("PACK") || tableName.Contains("TYPE") ||
-                            tableName.Contains("FORMULA") || tableName.Contains("规格") ||
-                            tableName.Contains("箱")) {
-                            sb.AppendLine($"  {tableName}");
-                        }
-                    }
-                    
-                    sb.AppendLine("\n\n搜索包含BOX或CARTON的表及其列结构：");
-                    var boxTables = helper.Select<dynamic>("SELECT table_name FROM user_tables WHERE UPPER(table_name) LIKE '%BOX%' OR UPPER(table_name) LIKE '%CARTON%' ORDER BY table_name");
-                    foreach (var table in boxTables) {
-                        string tableName = table.TABLE_NAME;
-                        sb.AppendLine($"\n找到表: {tableName}");
-                        var columns = helper.Select<dynamic>($"SELECT column_name, data_type FROM user_tab_columns WHERE table_name = '{tableName}' ORDER BY column_id");
-                        sb.AppendLine("  列结构：");
-                        foreach (var col in columns) {
-                            sb.AppendLine($"    {col.COLUMN_NAME} - {col.DATA_TYPE}");
-                        }
-                    }
-                    
-                    string filePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "箱型表查询结果.txt");
-                    System.IO.File.WriteAllText(filePath, sb.ToString());
-                    MessageBox.Show($"查询结果已保存到: {filePath}", "箱型表查询结果");
-                }
-            } catch (Exception ex) {
-                MessageBox.Show($"错误: {ex.Message}", "查询失败");
-            }
-        }
-
 
     }
 }
