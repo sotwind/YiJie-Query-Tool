@@ -87,20 +87,20 @@ SELECT
     t.serial as 单号，
     c.clntnme as 客户，
     p.prdnme as 产品，
-    e.empnme as 业务员，
+    h.empnme as 业务员，
     d.dptnme as 部门，
     nvl(t.quoprc, 0) as 报价金额，
-    nvl(t.prices, 0) * nvl(t.accnum, 0) as 卖价金额，
-    nvl(t.prices, 0) * nvl(t.accnum, 0) - nvl(t.quoprc, 0) as 利润差额，
+    nvl(t.accamt, 0) as 卖价金额，
+    nvl(t.accamt, 0) - nvl(t.quoprc, 0) as 利润差额，
     case 
         when nvl(t.quoprc, 0) = 0 then 0
-        else (nvl(t.prices, 0) * nvl(t.accnum, 0) - nvl(t.quoprc, 0)) / nvl(t.quoprc, 0) * 100
+        else (nvl(t.accamt, 0) - nvl(t.quoprc, 0)) / nvl(t.quoprc, 0) * 100
     end as 利率
 FROM ord_bas t
 LEFT JOIN pb_clnt c ON t.clntcde = c.clntcde
 LEFT JOIN pb_prd_bas p ON t.pid = p.id
-LEFT JOIN pb_dept_member e ON t.agntcde = e.mobile
-LEFT JOIN pb_dept d ON e.dptcde = d.dptcde
+LEFT JOIN hr_base h ON t.agntcde = h.mobile
+LEFT JOIN pb_dept d ON h.dptcde = d.dptcde
 WHERE t.status = 'Y'
   AND t.ptdate >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')" +
             @"  AND t.ptdate < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
@@ -120,7 +120,7 @@ WHERE t.status = 'Y'
 
                 if (tmpstr != "")
                 {
-                    sql += @" AND e.dptcde IN (" + tmpstr + @")";
+                    sql += @" AND d.dptcde IN (" + tmpstr + @")";
                 }
             }
 
@@ -139,7 +139,7 @@ WHERE t.status = 'Y'
 
                 if (tmpstr != "")
                 {
-                    sql += @" AND t.agntcde IN (" + tmpstr + @")";
+                    sql += @" AND h.mobile IN (" + tmpstr + @")";
                 }
             }
 
