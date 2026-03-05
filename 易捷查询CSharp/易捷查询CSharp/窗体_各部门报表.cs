@@ -1,8 +1,9 @@
-﻿using Com.Ekyb.CrossFactoryOrder.Common;
+using Com.Ekyb.CrossFactoryOrder.Common;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -23,33 +24,39 @@ namespace 易捷查询CSharp
 
         private void 按钮_查询_Click(object sender, EventArgs e)
         {
-            // 简化SQL，直接从grp_ord_data查询，不使用v_ord_processes视图
-            // 使用 ordnum 替代 accnum 计算面积
+            // 使用ord_bas和ord_ct表查询，替代不存在的grp_ord_data表
             var sql = @"
 select tp, agntcde, nvl(sum(accamt), 0) as 金额, nvl(sum(area), 0) as 面积, count(*) as 单数
 from
-(SELECT agntcde, accamt, acreage * ordnum as area,
-case crrcde when '1Z' then
+(SELECT t.agntcde, b.accamt, t.acreage * t.ordnum as area,
+case t.crrcde when '1Z' then
    '1Z'
 else
-    objtyp
+    b.objtyp
 end tp
-from grp_ord_data where status = 'Y'";
+from ord_bas b 
+join ord_ct t on b.serial = t.serial 
+where b.status = 'Y' and b.isactive='Y'";
 
-            sql += " and created >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
-            sql += " and created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
+            sql += " and b.created >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
+            sql += " and b.created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
 
             sql += ") group by agntcde, tp";
 
             List<tempData> tempDatas = new List<tempData>();
-            // 直接从集团服务器查询，不再循环遍历多个数据库
-            try {
-                using (var helper = SqlHelperFactory.OpenDatabase(易捷集团连接字符串, SqlType.Oracle)) {
-                    var list = helper.Select<tempData>(sql);
-                    tempDatas.AddRange(list);
+            // 遍历所有新系统数据库查询并汇总数据（ord_bas和ord_ct表只存在于新系统）
+            foreach (var db in DatabaseInfos.GetDatabaseInfos()) {
+                // 只查询新系统数据库
+                if (db.ServerType != "新系统")
+                    continue;
+                try {
+                    using (var helper = SqlHelperFactory.OpenDatabase(db.GetConnString(), SqlType.Oracle)) {
+                        var list = helper.Select<tempData>(sql);
+                        tempDatas.AddRange(list);
+                    }
+                } catch (Exception ex) {
+                    Debug.Print($"查询数据库 {db.FactoryName} 失败: {ex.Message}");
                 }
-            } catch (Exception ex) {
-                MessageBox.Show("集团服务器连接出错：" + ex.Message);
             }
             
             显示结果(tempDatas);

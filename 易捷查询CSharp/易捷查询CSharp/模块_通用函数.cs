@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿using Com.Ekyb.CrossFactoryOrder.Common;
+﻿﻿﻿﻿﻿﻿﻿using Com.Ekyb.CrossFactoryOrder.Common;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -109,10 +109,10 @@ namespace 易捷查询CSharp
                 // 1. 先从易捷集团数据库获取业务员数据
                 try {
                     using (var helper = SqlHelperFactory.OpenDatabase(易捷集团连接字符串, SqlType.Oracle)) {
-                        var sql = @"SELECT EMPCDE, DPTCDE as TEMCDE2, EMPNME, DPTNME as TEMNME
-                                    FROM PB_DEPT_MEMBER
-                                    WHERE ISACTIVE = 'Y'
-                                    ORDER BY DPTNME, EMPNME";
+                        var sql = @"SELECT user_cde as EMPCDE, dept_cde as TEMCDE, dept_cde as TEMCDE2, user_nme as EMPNME, '销售' as TEMNME
+                                    FROM pb_dept_member
+                                    WHERE is_active = 'Y'
+                                    ORDER BY user_nme";
                         var ts = helper.Select<empTemp>(sql);
                         foreach (var t in ts) {
                             if (t.TEMNME == null)
@@ -131,6 +131,9 @@ namespace 易捷查询CSharp
                                 }
                                 if (temp.EMPCDE == null || temp.EMPCDE == "") {
                                     temp.EMPCDE = t.EMPCDE;
+                                }
+                                if (temp.TEMCDE == null || temp.TEMCDE == "") {
+                                    temp.TEMCDE = t.TEMCDE;
                                 }
                                 if (temp.TEMCDE2 == null || temp.TEMCDE2 == "") {
                                     temp.TEMCDE2 = t.TEMCDE2;

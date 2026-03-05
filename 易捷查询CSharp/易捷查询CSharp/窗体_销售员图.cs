@@ -1,4 +1,4 @@
-﻿using Com.Ekyb.CrossFactoryOrder.Common;
+using Com.Ekyb.CrossFactoryOrder.Common;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -41,12 +41,18 @@ namespace 易捷查询CSharp
         private void 按钮_查询_Click(object sender, EventArgs e) {
             string sql = null;
             if (单选_显示业务员.Checked) {
-                sql = "select objtyp, agntcde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage * ordnum),0) as 面积, count(*) as 单数 from grp_ord_data where status='Y'";
+                sql = @"select b.objtyp, t.agntcde, nvl(sum(b.accamt),0) as 金额, nvl(sum(t.acreage * t.ordnum),0) as 面积, count(*) as 单数 
+                        from ord_bas b 
+                        join ord_ct t on b.serial = t.serial 
+                        where b.status='Y' and b.isactive='Y'";
             } else {
-                sql = "select objtyp, asscde as agntcde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage * ordnum),0) as 面积, count(*) as 单数 from grp_ord_data where status='Y'";
+                sql = @"select b.objtyp, t.asscde as agntcde, nvl(sum(b.accamt),0) as 金额, nvl(sum(t.acreage * t.ordnum),0) as 面积, count(*) as 单数 
+                        from ord_bas b 
+                        join ord_ct t on b.serial = t.serial 
+                        where b.status='Y' and b.isactive='Y'";
             }
-            sql += " and created >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
-            sql += " and created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
+            sql += " and b.created >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
+            sql += " and b.created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
 
             var tmpstr = "";
             if (列表_业务员.CheckedItems.Count == 0) {
@@ -65,7 +71,7 @@ namespace 易捷查询CSharp
                         }
                     }
                     if (tmpstr != "") {
-                        sql += " and agntcde in (";
+                        sql += " and t.agntcde in (";
                         sql += tmpstr;
                         sql += ")";
                     }
@@ -73,21 +79,17 @@ namespace 易捷查询CSharp
             } else {
                 for (int i = 0; i < 列表_业务员.Items.Count; i++) {
                     if (列表_业务员.GetItemChecked(i)) {
-                        if (((DataRowView)列表_业务员.Items[i])["EMPNME"].ToString() == "吴玉龙") {
-                            Debug.WriteLine(((DataRowView)列表_业务员.Items[i])["EMPNME"].ToString());
-                            Debug.WriteLine(((DataRowView)列表_业务员.Items[i])["EMPCDE"].ToString());
-                            Debug.WriteLine(((DataRowView)列表_业务员.Items[i])["TEMCDE"].ToString());
-                            Debug.WriteLine(((DataRowView)列表_业务员.Items[i])["TEMNME"].ToString());
-                        }
-                        //列表_业务员.SetItemChecked(i, true);
                         if (tmpstr != "") { tmpstr += ","; }
                         tmpstr += "'" + ((DataRowView)列表_业务员.Items[i])["EMPCDE"].ToString() + "'";
-                        tmpstr += ",";
-                        tmpstr += "'" + ((DataRowView)列表_业务员.Items[i])["EMPCDE2"].ToString() + "'";
+                        var empCode2 = ((DataRowView)列表_业务员.Items[i])["EMPCDE2"].ToString();
+                        if (!string.IsNullOrEmpty(empCode2)) {
+                            tmpstr += ",";
+                            tmpstr += "'" + empCode2 + "'";
+                        }
                     }
                 }
                 if (tmpstr != "") {
-                    sql += " and agntcde in (";
+                    sql += " and t.agntcde in (";
                     sql += tmpstr;
                     sql += ")";
                 }
@@ -102,27 +104,31 @@ namespace 易捷查询CSharp
                     }
                 }
                 if (tmpstr != "") {
-                    sql += " and asscde in (";
+                    sql += " and t.asscde in (";
                     sql += tmpstr;
                     sql += ")";
                 }
             }
             if (单选_显示业务员.Checked) {
-                sql += " group by agntcde, objtyp order by agntcde";
+                sql += " group by t.agntcde, b.objtyp order by t.agntcde";
             } else {
-                sql += " group by asscde, objtyp order by asscde";
+                sql += " group by t.asscde, b.objtyp order by t.asscde";
             }
             
             List<tempData> tempDatas = new List<tempData>();
-            // 直接从集团服务器查询，不再循环遍历多个数据库
-            try {
-                using (var helper = SqlHelperFactory.OpenDatabase(易捷集团连接字符串, SqlType.Oracle)) {
-                    var list = helper.Select<tempData>(sql);
-                    tempDatas.AddRange(list);
+            // 遍历所有新系统数据库查询并汇总数据（ord_bas和ord_ct表只存在于新系统）
+            foreach (var db in DatabaseInfos.GetDatabaseInfos()) {
+                // 只查询新系统数据库
+                if (db.ServerType != "新系统")
+                    continue;
+                try {
+                    using (var helper = SqlHelperFactory.OpenDatabase(db.GetConnString(), SqlType.Oracle)) {
+                        var list = helper.Select<tempData>(sql);
+                        tempDatas.AddRange(list);
+                    }
+                } catch (Exception ex) {
+                    Debug.Print($"查询数据库 {db.FactoryName} 失败: {ex.Message}");
                 }
-            } catch (Exception ex) {
-                Debug.Print("SQL执行失败，语句：" + sql);
-                MessageBox.Show("集团服务器连接出错：" + ex.Message);
             }
 
             显示结果(tempDatas);

@@ -150,6 +150,7 @@ namespace 易捷查询CSharp
             this.列表_部门.Name = "列表_部门";
             this.列表_部门.Size = new System.Drawing.Size(114, 180);
             this.列表_部门.TabIndex = 0;
+            this.列表_部门.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.列表_部门_ItemCheck);
             // 
             // GroupBox3
             // 

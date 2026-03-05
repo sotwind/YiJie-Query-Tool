@@ -88,6 +88,12 @@
     <Compile Include="窗体_利润统计.Designer.cs">
       <DependentUpon>窗体_利润统计.cs</DependentUpon>
     </Compile>
+    <Compile Include="窗体_报价差额统计.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="窗体_报价差额统计.designer.cs">
+      <DependentUpon>窗体_报价差额统计.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="窗体_功能列表.resx">
       <DependentUpon>窗体_功能列表.cs</DependentUpon>
     </EmbeddedResource>

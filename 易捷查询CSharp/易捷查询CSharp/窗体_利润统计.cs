@@ -29,7 +29,14 @@ namespace 易捷查询CSharp
                 列表_部门.DisplayMember = "TEMNME";
                 列表_部门.ValueMember = "TEMCDE";
 
-                列表_业务员.DataSource = 模块_通用函数.易捷业务员表 ();
+                // 调试：输出部门编码信息
+                var 部门表 = 模块_通用函数.易捷部门表 ();
+                System.Diagnostics.Debug.WriteLine("=== 部门表数据 ===");
+                foreach (System.Data.DataRow row in 部门表.Rows) {
+                    System.Diagnostics.Debug.WriteLine($"部门名称：{row["TEMNME"]}, 部门编码 (TEMCDE): {row["TEMCDE"]}, 部门编码 2(TEMCDE2): {row["TEMCDE2"]}");
+                }
+
+                列表_业务员.DataSource = 模块_通用函数.易捷业务员表 ().DefaultView;
                 列表_业务员.DisplayMember = "EMPNME";
                 列表_业务员.ValueMember = "EMPCDE";
 
@@ -49,6 +56,15 @@ namespace 易捷查询CSharp
                 列表_查询结果.Items.Clear();
 
                 string sql = BuildQueryString();
+
+                // 调试：输出 SQL 和筛选条件
+                System.Diagnostics.Debug.WriteLine("=== 查询 SQL ===");
+                System.Diagnostics.Debug.WriteLine(sql);
+                System.Diagnostics.Debug.WriteLine($"部门勾选数量：{列表_部门.CheckedItems.Count}");
+                System.Diagnostics.Debug.WriteLine($"业务员勾选数量：{列表_业务员.CheckedItems.Count}");
+                foreach (DataRowView rowview in 列表_部门.CheckedItems) {
+                    System.Diagnostics.Debug.WriteLine($"勾选的部门：名称={rowview["TEMNME"]}, 编码 (TEMCDE)={rowview["TEMCDE"]}, 编码 2(TEMCDE2)={rowview["TEMCDE2"]}");
+                }
 
                 List<利润统计数据> profitDataList = new List<利润统计数据>();
 
@@ -103,7 +119,7 @@ LEFT JOIN hr_base h ON t.agntcde = h.mobile
 LEFT JOIN pb_dept d ON h.dptcde = d.dptcde
 WHERE b.isactive = 'Y'
   AND b.created >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')" +
-            @"  AND b.created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd')";
+            @"  AND b.created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
 
             if (列表_部门.CheckedItems.Count > 0)
             {
@@ -217,6 +233,34 @@ WHERE b.isactive = 'Y'
             catch (Exception ex)
             {
                 MessageBox.Show("导出失败：" + ex.Message);
+            }
+        }
+
+        private void 列表_部门_ItemCheck(object sender, ItemCheckEventArgs e)
+        {
+            var count = 列表_部门.CheckedItems.Count;
+            var 当前项 = 列表_部门.SelectedIndex;
+            var 当前状态 = 列表_部门.GetItemChecked(当前项);
+            if (当前状态) {
+                count -= 1;
+            } else {
+                count += 1;
+            }
+            if (count > 0) {
+                var tmpstr = "";
+                for (int i = 0; i < 列表_部门.Items.Count; i++) {
+                    var 该项状态 = 列表_部门.GetItemChecked(i);
+                    if (i == 当前项) 该项状态 = !该项状态;
+                    if (该项状态 == true) {
+                        if (tmpstr != "") {
+                            tmpstr += ",";
+                        }
+                        tmpstr += "'" + 列表_部门.GetItemText(列表_部门.Items[i]) + "'";
+                    }
+                }
+                模块_通用函数.易捷业务员表().DefaultView.RowFilter = "TEMNME in (" + tmpstr + ")";
+            } else {
+                模块_通用函数.易捷业务员表().DefaultView.RowFilter = "";
             }
         }
 
