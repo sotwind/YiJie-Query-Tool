@@ -150,18 +150,19 @@ WHERE b.isactive = 'Y'
 
             if (文本_单号.Text.Trim() != "")
             {
-                sql += @" AND t.serial LIKE '%" + 文本_单号.Text.Trim() + "%'";
+                sql += @" AND b.serial LIKE '%" + 文本_单号.Text.Trim() + "%'";
             }
 
             if (文本_产品.Text.Trim() != "")
             {
-                sql += @" AND p.prdnme LIKE '%" + 文本_产品.Text.Trim() + "%'";
+                sql += @" AND b.prdnme LIKE '%" + 文本_产品.Text.Trim() + "%'";
             }
 
+            // 利率筛选使用 ord_bas 表的字段计算，因为 ord_ct 没有 quoprc 字段
             sql += @" AND (
                 case 
-                    when nvl(t.quoprc, 0) = 0 then 0
-                    else (nvl(t.prices, 0) * nvl(t.accnum, 0) - nvl(t.quoprc, 0)) / nvl(t.quoprc, 0) * 100
+                    when nvl(b.quoprc, 0) * nvl(b.accnum, 0) = 0 then 0
+                    else (nvl(b.accamt, 0) - nvl(b.quoprc, 0) * nvl(b.accnum, 0)) / (nvl(b.quoprc, 0) * nvl(b.accnum, 0)) * 100
                 end
             ) BETWEEN " + 数值_利率从.Value.ToString() + " AND " + 数值_利率到.Value.ToString();
 
