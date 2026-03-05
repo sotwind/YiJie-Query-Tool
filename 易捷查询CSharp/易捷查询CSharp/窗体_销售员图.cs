@@ -44,12 +44,12 @@ namespace 易捷查询CSharp
                 sql = @"select b.objtyp, t.agntcde, nvl(sum(b.accamt),0) as 金额, nvl(sum(t.acreage * t.ordnum),0) as 面积, count(*) as 单数 
                         from ord_bas b 
                         join ord_ct t on b.serial = t.serial 
-                        where b.status='Y' and b.isactive='Y'";
+                        where b.isactive='Y'";
             } else {
                 sql = @"select b.objtyp, t.asscde as agntcde, nvl(sum(b.accamt),0) as 金额, nvl(sum(t.acreage * t.ordnum),0) as 面积, count(*) as 单数 
                         from ord_bas b 
                         join ord_ct t on b.serial = t.serial 
-                        where b.status='Y' and b.isactive='Y'";
+                        where b.isactive='Y'";
             }
             sql += " and b.created >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
             sql += " and b.created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
@@ -116,11 +116,8 @@ namespace 易捷查询CSharp
             }
             
             List<tempData> tempDatas = new List<tempData>();
-            // 遍历所有新系统数据库查询并汇总数据（ord_bas和ord_ct表只存在于新系统）
+            // 遍历所有数据库查询并汇总数据
             foreach (var db in DatabaseInfos.GetDatabaseInfos()) {
-                // 只查询新系统数据库
-                if (db.ServerType != "新系统")
-                    continue;
                 try {
                     using (var helper = SqlHelperFactory.OpenDatabase(db.GetConnString(), SqlType.Oracle)) {
                         var list = helper.Select<tempData>(sql);

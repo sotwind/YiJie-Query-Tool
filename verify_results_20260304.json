@@ -1,0 +1,30 @@
+{
+  "salesChart": [
+    {
+      "factory": "老厂新系统",
+      "status": "无订单数据表",
+      "rows": 0,
+      "data": []
+    },
+    {
+      "factory": "温森新系统",
+      "status": "无订单数据表",
+      "rows": 0,
+      "data": []
+    }
+  ],
+  "profitStats": [
+    {
+      "factory": "老厂新系统",
+      "status": "无订单数据表",
+      "rows": 0,
+      "data": []
+    },
+    {
+      "factory": "温森新系统",
+      "status": "无订单数据表",
+      "rows": 0,
+      "data": []
+    }
+  ]
+}

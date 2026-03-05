@@ -158,7 +158,7 @@ SELECT
 FROM ferp.ord_bas b
 LEFT JOIN ferp.pb_clnt c ON b.clntcde = c.clntcde
 LEFT JOIN ferp.pb_clnt_agnt ca ON c.clntcde = ca.clntcde AND ca.isactive = 'Y'
-LEFT JOIN ferp.pb_dept_member dm ON ca.agntcde = dm.empcde AND dm.isactive = 'Y'
+LEFT JOIN ferp.pb_dept_member dm ON ca.agntcde = dm.user_cde AND dm.isactive = 'Y'
 WHERE b.isactive = 'Y' 
   AND b.quoprc IS NOT NULL 
   AND b.quoprc > 0

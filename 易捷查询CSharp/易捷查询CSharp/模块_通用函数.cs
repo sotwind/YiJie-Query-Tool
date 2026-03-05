@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿using Com.Ekyb.CrossFactoryOrder.Common;
+using Com.Ekyb.CrossFactoryOrder.Common;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -8,20 +8,20 @@ using System.Windows.Forms;
 using ToolGood.ReadyGo3;
 using System.ComponentModel;
 
-namespace 易捷查询CSharp
+namespace 易捷查询 CSharp
 {
     internal class 模块_通用函数
     {
-        private const String Ora连接字符串 = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=36.137.213.189)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=dbms)));User Id=read;Password=ejsh.read;";
+        private const String Ora 连接字符串 = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=36.137.213.189)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=dbms)));User Id=read;Password=ejsh.read;";
 
         // 易捷集团数据库连接字符串（用于获取部门和业务员数据）
         private const string 易捷集团连接字符串 = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=36.138.130.91)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=dbms)));User Id=fgrp;Password=kuke.fgrp;";
 
-        public static void 初始化日期从(DateTimePicker 时间器)
+        public static void 初始化日期从 (DateTimePicker 时间器)
         {
             时间器.Value = DateTime.Today;
         }
-        public static void 初始化日期到(DateTimePicker 时间器)
+        public static void 初始化日期到 (DateTimePicker 时间器)
         {
             时间器.Value = DateTime.Today.AddDays(1).AddMilliseconds(-1);
         }
@@ -30,11 +30,15 @@ namespace 易捷查询CSharp
         private static DataTable 私有_业务员表;
         private static DataTable 私有_跟单员表;
 
-        public static DataTable 易捷部门表()
+        // 新增：全局业务员字典（从集团数据库加载，只加载一次）
+        private static Dictionary<string, empTemp> 全局业务员字典;
+        private static bool 已加载集团数据 = false;
+
+        public static DataTable 易捷部门表 ()
         {
             try {
                 if (私有_部门表 == null) {
-                    var all = get业务员表();
+                    var all = get 业务员表 ();
                     Dictionary<string, dptTemp> dict = new Dictionary<string, dptTemp>();
                     foreach (var item in all) {
                         dptTemp dptTemp;
@@ -55,13 +59,6 @@ namespace 易捷查询CSharp
                     }
                     var list = dict.Select(q => q.Value).OrderBy(q => q.TEMNME).ToList();
                     私有_部门表 = ConvertToDatatable(list);
-
-                    //var 业务员表 = 易捷业务员表();
-                    //if (业务员表 != null) {
-                    //    var Dv = new DataView(业务员表);
-                    //    var cols = new string[] { "TEMCDE", "TEMCDE2", "TEMNME" };
-                    //    私有_部门表 = Dv.ToTable(true, cols);
-                    //}
                 }
                 return 私有_部门表;
             } catch (Exception ex) {
@@ -87,11 +84,11 @@ namespace 易捷查询CSharp
         }
 
 
-        public static DataTable 易捷业务员表()
+        public static DataTable 易捷业务员表 ()
         {
             try {
                 if (私有_业务员表 == null) {
-                    var all = get业务员表();
+                    var all = get 业务员表 ();
                     私有_业务员表 = ConvertToDatatable(all);
                 }
                 return 私有_业务员表;
@@ -100,19 +97,23 @@ namespace 易捷查询CSharp
                 return null;
             }
         }
+        
         private static List<empTemp> 业务员表;
-        private static List<empTemp> get业务员表()
+        
+        private static List<empTemp> get 业务员表 ()
         {
             if (业务员表 == null) {
                 Dictionary<string, empTemp> dict = new Dictionary<string, empTemp>();
 
                 // 1. 先从易捷集团数据库获取业务员数据
                 try {
-                    using (var helper = SqlHelperFactory.OpenDatabase(易捷集团连接字符串, SqlType.Oracle)) {
-                        var sql = @"SELECT user_cde as EMPCDE, dept_cde as TEMCDE, dept_cde as TEMCDE2, user_nme as EMPNME, '销售' as TEMNME
-                                    FROM pb_dept_member
-                                    WHERE is_active = 'Y'
-                                    ORDER BY user_nme";
+                    using (var helper = SqlHelperFactory.OpenDatabase(易捷集团连接字符串，SqlType.Oracle)) {
+                        var sql = @"SELECT m.user_cde as EMPCDE, m.dept_cde as TEMCDE, m.dept_cde as TEMCDE2, 
+                                           m.user_nme as EMPNME, d.dept_nme as TEMNME
+                                    FROM pb_dept_member m
+                                    LEFT JOIN pb_dept d ON m.dept_cde = d.dept_cde
+                                    WHERE m.isactive = 'Y'
+                                    ORDER BY d.dept_nme, m.user_nme";
                         var ts = helper.Select<empTemp>(sql);
                         foreach (var t in ts) {
                             if (t.TEMNME == null)
@@ -132,11 +133,11 @@ namespace 易捷查询CSharp
                                 if (temp.EMPCDE == null || temp.EMPCDE == "") {
                                     temp.EMPCDE = t.EMPCDE;
                                 }
-                                if (temp.TEMCDE == null || temp.TEMCDE == "") {
-                                    temp.TEMCDE = t.TEMCDE;
-                                }
                                 if (temp.TEMCDE2 == null || temp.TEMCDE2 == "") {
                                     temp.TEMCDE2 = t.TEMCDE2;
+                                }
+                                if (temp.TEMCDE == null || temp.TEMCDE == "") {
+                                    temp.TEMCDE = t.TEMCDE;
                                 }
                             } else {
                                 dict[t.TEMNME + "-" + t.EMPNME] = t;
@@ -144,16 +145,53 @@ namespace 易捷查询CSharp
                         }
                     }
                 } catch (Exception ex) {
-                    System.Diagnostics.Debug.WriteLine($"查询易捷集团数据库的业务员表失败: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"查询易捷集团数据库的业务员表失败：{ex.Message}");
                 }
 
                 // 2. 再从各业务数据库补充数据
                 foreach (var db in DatabaseInfos.GetDatabaseInfos()) {
                     try {
                         using (var helper = SqlHelperFactory.OpenDatabase(db.GetConnString(), SqlType.Oracle)) {
-                            var sql = "select EMPCDE, TEMCDE, EMPNME, TEMNME from pb_emps where objtyp ='AG' order by TEMNME";
+                            // 新系统优先查询 pb_dept_member 表（字段名不同：EMPCDE, EMPNME, DPTNME）
                             if (db.ServerType == "新系统") {
-                                sql = @"SELECT h.MOBILE EMPCDE2,h.EMPNME EMPNME, d.dptcde TEMCDE2,d.dptNme TEMNME  from HR_BASE h, PB_DEPT d
+                                // 2.1 先查询新系统的 pb_dept_member 表
+                                try {
+                                    var pbDeptMemberSql = @"
+                                        SELECT m.empcde as EMPCDE, m.empcde as EMPCDE2, 
+                                               m.empnme as EMPNME, m.dptnme as TEMNME
+                                        FROM pb_dept_member m
+                                        WHERE m.isactive = 'Y'
+                                        ORDER BY m.dptnme, m.empnme";
+                                    var ts_member = helper.Select<empTemp>(pbDeptMemberSql);
+                                    foreach (var t in ts_member) {
+                                        if (t.TEMNME == null)
+                                            continue;
+                                        // 统一部门名称
+                                        t.TEMNME = t.TEMNME.Replace("老厂销售", "销售");
+                                        t.TEMNME = t.TEMNME.Replace("新厂销售", "销售");
+                                        t.TEMNME = t.TEMNME.Replace("临海销售", "销售");
+                                        t.TEMNME = t.TEMNME.Replace("温森一期销售", "销售");
+                                        t.TEMNME = t.TEMNME.Replace("温森二期销售", "销售");
+
+                                        empTemp temp;
+                                        if (dict.TryGetValue(t.TEMNME + "-" + t.EMPNME, out temp)) {
+                                            if (temp.EMPCDE2 == null || temp.EMPCDE2 == "") {
+                                                temp.EMPCDE2 = t.EMPCDE2;
+                                            }
+                                            if (temp.EMPCDE == null || temp.EMPCDE == "") {
+                                                temp.EMPCDE = t.EMPCDE;
+                                            }
+                                        } else {
+                                            dict[t.TEMNME + "-" + t.EMPNME] = t;
+                                        }
+                                    }
+                                    System.Diagnostics.Debug.WriteLine($"✓ 从 {db.FactoryName} 的 pb_dept_member 表获取了 {ts_member.Count} 条业务员数据");
+                                } catch (Exception ex) {
+                                    System.Diagnostics.Debug.WriteLine($"⚠ 查询 {db.FactoryName} 的 pb_dept_member 表失败：{ex.Message}");
+                                }
+
+                                // 2.2 再查询 HR_BASE 表补充数据
+                                var hrBaseSql = @"SELECT h.MOBILE EMPCDE2,h.EMPNME EMPNME, d.dptcde TEMCDE2,d.dptNme TEMNME  from HR_BASE h, PB_DEPT d
 where d.dptcde = h.dptcde and h.ORGCDE=d.ORGCDE
 and( h.MOBILE in(SELECT MOBILE from sys_user s where s.istype = 'AG' and s.STATUS='Y')
 	or d.dptNme LIKE '%销售%'
@@ -162,41 +200,63 @@ and( h.MOBILE in(SELECT MOBILE from sys_user s where s.istype = 'AG' and s.STATU
 and h.STATUS='Y' and h.MOBILE is not null
 ORDER BY dptNme
 ";
-                            }
-                            var ts = helper.Select<empTemp>(sql);
-                            foreach (var t in ts) {
+                                var ts_hr = helper.Select<empTemp>(hrBaseSql);
+                                foreach (var t in ts_hr) {
+                                    if (t.TEMNME == null)
+                                        continue;
+                                    t.TEMNME = t.TEMNME.Replace("老厂销售", "销售");
+                                    t.TEMNME = t.TEMNME.Replace("新厂销售", "销售");
+                                    t.TEMNME = t.TEMNME.Replace("临海销售", "销售");
+                                    t.TEMNME = t.TEMNME.Replace("温森一期销售", "销售");
+                                    t.TEMNME = t.TEMNME.Replace("温森二期销售", "销售");
 
-                                if (t.TEMNME == null)
-                                    continue;
-                                t.TEMNME = t.TEMNME.Replace("老厂销售", "销售");
-                                t.TEMNME = t.TEMNME.Replace("新厂销售", "销售");
-                                t.TEMNME = t.TEMNME.Replace("临海销售", "销售");
-                                t.TEMNME = t.TEMNME.Replace("温森一期销售", "销售");
-                                t.TEMNME = t.TEMNME.Replace("温森二期销售", "销售");
-                                if (t.EMPNME == "陈海龙")
-                                {
-                                    // 当员工名字为"陈海龙"时，打印当前数据库的factoryName和servername
-                                    // System.Diagnostics.Debug.WriteLine($"Employee Name: {t.EMPNME}, Department: {t.TEMNME}, DatabaseInfo: FactoryName={db.FactoryName}, ServerName={db.ServerName}");
+                                    empTemp temp;
+                                    if (dict.TryGetValue(t.TEMNME + "-" + t.EMPNME, out temp)) {
+                                        if (temp.EMPCDE2 == null || temp.EMPCDE2 == "") {
+                                            temp.EMPCDE2 = t.EMPCDE2;
+                                        }
+                                        if (temp.EMPCDE == null || temp.EMPCDE == "") {
+                                            temp.EMPCDE = t.EMPCDE;
+                                        }
+                                        if (temp.TEMCDE2 == null || temp.TEMCDE2 == "") {
+                                            temp.TEMCDE2 = t.TEMCDE2;
+                                        }
+                                    } else {
+                                        dict[t.TEMNME + "-" + t.EMPNME] = t;
+                                    }
                                 }
-                                empTemp temp;
-                                if (dict.TryGetValue(t.TEMNME + "-" + t.EMPNME, out temp)) {
-                                    if (temp.EMPCDE2 == null || temp.EMPCDE2 == "") {
-                                        temp.EMPCDE2 = t.EMPCDE2;
+                            } else {
+                                // 旧系统使用 pb_emps 表
+                                var sql = "select EMPCDE, TEMCDE, EMPNME, TEMNME from pb_emps where objtyp ='AG' order by TEMNME";
+                                var ts = helper.Select<empTemp>(sql);
+                                foreach (var t in ts) {
+                                    if (t.TEMNME == null)
+                                        continue;
+                                    t.TEMNME = t.TEMNME.Replace("老厂销售", "销售");
+                                    t.TEMNME = t.TEMNME.Replace("新厂销售", "销售");
+                                    t.TEMNME = t.TEMNME.Replace("临海销售", "销售");
+                                    t.TEMNME = t.TEMNME.Replace("温森一期销售", "销售");
+                                    t.TEMNME = t.TEMNME.Replace("温森二期销售", "销售");
+
+                                    empTemp temp;
+                                    if (dict.TryGetValue(t.TEMNME + "-" + t.EMPNME, out temp)) {
+                                        if (temp.EMPCDE2 == null || temp.EMPCDE2 == "") {
+                                            temp.EMPCDE2 = t.EMPCDE2;
+                                        }
+                                        if (temp.EMPCDE == null || temp.EMPCDE == "") {
+                                            temp.EMPCDE = t.EMPCDE;
+                                        }
+                                        if (temp.TEMCDE2 == null || temp.TEMCDE2 == "") {
+                                            temp.TEMCDE2 = t.TEMCDE2;
+                                        }
+                                    } else {
+                                        dict[t.TEMNME + "-" + t.EMPNME] = t;
                                     }
-                                    if (temp.EMPCDE == null || temp.EMPCDE == "") {
-                                        temp.EMPCDE = t.EMPCDE;
-                                    }
-                                    if (temp.TEMCDE2 == null || temp.TEMCDE2 == "") {
-                                        temp.TEMCDE2 = t.TEMCDE2;
-                                    }
-                                } else {
-                                    dict[t.TEMNME + "-" + t.EMPNME] = t;
                                 }
                             }
                         }
                     } catch (Exception ex) {
-                        // 跳过查询失败的数据库，继续处理其他数据库
-                        System.Diagnostics.Debug.WriteLine($"查询数据库 {db.FactoryName} 的业务员表失败: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"查询数据库 {db.FactoryName} 的业务员表失败：{ex.Message}");
                     }
                 }
                 业务员表 = dict.Select(q => q.Value).OrderBy(q => q.TEMNME).ToList();
@@ -206,11 +266,99 @@ ORDER BY dptNme
 
 
 
-        public static DataTable 易捷跟单员表()
+        /// <summary>
+        /// 从易捷集团数据库加载所有业务员到内存（只加载一次）
+        /// </summary>
+        public static void 加载集团业务员数据()
+        {
+            if (已加载集团数据) return;  // 只加载一次
+
+            全局业务员字典 = new Dictionary<string, empTemp>();
+
+            using (var helper = SqlHelperFactory.OpenDatabase(易捷集团连接字符串, SqlType.Oracle))
+            {
+                // 从集团数据库查询所有业务员
+                var sql = @"SELECT m.user_cde as EMPCDE, 
+                                   m.dept_cde as TEMCDE, 
+                                   m.dept_cde as TEMCDE2, 
+                                   m.user_nme as EMPNME, 
+                                   d.dept_nme as TEMNME
+                            FROM pb_dept_member m
+                            LEFT JOIN pb_dept d ON m.dept_cde = d.dept_cde
+                            WHERE m.isactive = 'Y'
+                            ORDER BY d.dept_nme, m.user_nme";
+
+                var emps = helper.Select<empTemp>(sql);
+                foreach (var emp in emps)
+                {
+                    if (string.IsNullOrEmpty(emp.EMPCDE)) continue;
+
+                    // 统一部门名称
+                    if (!string.IsNullOrEmpty(emp.TEMNME))
+                    {
+                        emp.TEMNME = emp.TEMNME.Replace("老厂销售", "销售")
+                                               .Replace("新厂销售", "销售")
+                                               .Replace("临海销售", "销售")
+                                               .Replace("温森一期销售", "销售")
+                                               .Replace("温森二期销售", "销售");
+                    }
+
+                    // 以 EMPCDE 为 key 存入字典
+                    全局业务员字典[emp.EMPCDE] = emp;
+                }
+            }
+
+            已加载集团数据 = true;
+            System.Diagnostics.Debug.WriteLine($"✓ 从集团数据库加载了 {全局业务员字典.Count} 名业务员");
+        }
+
+        /// <summary>
+        /// 根据业务员编码获取业务员信息，如果不存在则自动创建临时记录
+        /// </summary>
+        public static empTemp 获取业务员信息(string 业务员编码)
+        {
+            // 确保已加载集团数据
+            加载集团业务员数据();
+
+            // 如果存在，直接返回
+            if (全局业务员字典.TryGetValue(业务员编码, out var emp))
+            {
+                return emp;
+            }
+
+            // 不存在，创建一个临时记录（用手机号作为名字显示）
+            var 临时业务员 = new empTemp
+            {
+                EMPCDE = 业务员编码,
+                EMPCDE2 = 业务员编码,
+                EMPNME = 业务员编码,  // 用手机号作为名字显示
+                TEMNME = "未知部门",
+                TEMCDE = "",
+                TEMCDE2 = ""
+            };
+
+            // 添加到字典中，避免重复创建
+            全局业务员字典[业务员编码] = 临时业务员;
+
+            System.Diagnostics.Debug.WriteLine($"⚠ 补充临时业务员记录：[{业务员编码}]");
+
+            return 临时业务员;
+        }
+
+        /// <summary>
+        /// 检查业务员是否存在（不自动创建）
+        /// </summary>
+        public static bool 业务员是否存在(string 业务员编码)
+        {
+            加载集团业务员数据();
+            return 全局业务员字典.ContainsKey(业务员编码);
+        }
+
+        public static DataTable 易捷跟单员表 ()
         {
             try {
                 if (私有_跟单员表 == null) {
-                    私有_跟单员表 = Ora数据表请求("select EMPCDE, TEMCDE, EMPNME, TEMNME from pb_emps where objtyp ='AS' order by TEMNME");
+                    私有_跟单员表 = Ora 数据表请求 ("select EMPCDE, TEMCDE, EMPNME, TEMNME from pb_emps where objtyp ='AS' order by TEMNME");
                 }
                 return 私有_跟单员表;
             } catch (Exception ex) {
@@ -218,13 +366,13 @@ ORDER BY dptNme
                 return null;
             }
         }
-        public static DataTable Ora数据表请求(string sql)
+        
+        public static DataTable Ora 数据表请求 (string sql)
         {
             try {
-                using (var helper = SqlHelperFactory.OpenDatabase(Ora连接字符串, SqlType.Oracle)) {
+                using (var helper = SqlHelperFactory.OpenDatabase(Ora 连接字符串，SqlType.Oracle)) {
                     return helper.ExecuteDataTable(sql);
                 }
-
             } catch (Exception ex) {
                 MessageBox.Show(ex.Message);
                 return null;
