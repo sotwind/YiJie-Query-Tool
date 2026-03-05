@@ -1,4 +1,4 @@
-using Com.Ekyb.CrossFactoryOrder.Common;
+﻿using Com.Ekyb.CrossFactoryOrder.Common;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,9 +14,6 @@ namespace 易捷查询CSharp
 {
     public partial class 窗体_销售员图 : Form
     {
-        // 易捷集团数据库连接字符串
-        private const string 易捷集团连接字符串 = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=36.138.130.91)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=dbms)));User Id=fgrp;Password=kuke.fgrp;";
-
         public 窗体_销售员图() {
             InitializeComponent();
         }
@@ -41,18 +38,12 @@ namespace 易捷查询CSharp
         private void 按钮_查询_Click(object sender, EventArgs e) {
             string sql = null;
             if (单选_显示业务员.Checked) {
-                sql = @"select b.objtyp, t.agntcde, nvl(sum(b.accamt),0) as 金额, nvl(sum(t.acreage * t.ordnum),0) as 面积, count(*) as 单数 
-                        from ord_bas b 
-                        join ord_ct t on b.serial = t.serial 
-                        where b.isactive='Y'";
+                sql = "select objtyp, agntcde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage*accnum),0) as 面积, count(*) as 单数 from v_ord where status='Y'";
             } else {
-                sql = @"select b.objtyp, t.asscde as agntcde, nvl(sum(b.accamt),0) as 金额, nvl(sum(t.acreage * t.ordnum),0) as 面积, count(*) as 单数 
-                        from ord_bas b 
-                        join ord_ct t on b.serial = t.serial 
-                        where b.isactive='Y'";
+                sql = "select objtyp, asscde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage*accnum),0) as 面积, count(*) as 单数 from v_ord where status='Y'";
             }
-            sql += " and b.created >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
-            sql += " and b.created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-mm-dd')";
+            sql += " and ptdate >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
+            sql += " and ptdate < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
 
             var tmpstr = "";
             if (列表_业务员.CheckedItems.Count == 0) {
@@ -71,7 +62,7 @@ namespace 易捷查询CSharp
                         }
                     }
                     if (tmpstr != "") {
-                        sql += " and t.agntcde in (";
+                        sql += " and agntcde in (";
                         sql += tmpstr;
                         sql += ")";
                     }
@@ -79,17 +70,21 @@ namespace 易捷查询CSharp
             } else {
                 for (int i = 0; i < 列表_业务员.Items.Count; i++) {
                     if (列表_业务员.GetItemChecked(i)) {
+                        if (((DataRowView)列表_业务员.Items[i])["EMPNME"].ToString() == "吴玉龙") {
+                            Debug.WriteLine(((DataRowView)列表_业务员.Items[i])["EMPNME"].ToString());
+                            Debug.WriteLine(((DataRowView)列表_业务员.Items[i])["EMPCDE"].ToString());
+                            Debug.WriteLine(((DataRowView)列表_业务员.Items[i])["TEMCDE"].ToString());
+                            Debug.WriteLine(((DataRowView)列表_业务员.Items[i])["TEMNME"].ToString());
+                        }
+                        //列表_业务员.SetItemChecked(i, true);
                         if (tmpstr != "") { tmpstr += ","; }
                         tmpstr += "'" + ((DataRowView)列表_业务员.Items[i])["EMPCDE"].ToString() + "'";
-                        var empCode2 = ((DataRowView)列表_业务员.Items[i])["EMPCDE2"].ToString();
-                        if (!string.IsNullOrEmpty(empCode2)) {
-                            tmpstr += ",";
-                            tmpstr += "'" + empCode2 + "'";
-                        }
+                        tmpstr += ",";
+                        tmpstr += "'" + ((DataRowView)列表_业务员.Items[i])["EMPCDE2"].ToString() + "'";
                     }
                 }
                 if (tmpstr != "") {
-                    sql += " and t.agntcde in (";
+                    sql += " and agntcde in (";
                     sql += tmpstr;
                     sql += ")";
                 }
@@ -104,27 +99,26 @@ namespace 易捷查询CSharp
                     }
                 }
                 if (tmpstr != "") {
-                    sql += " and t.asscde in (";
+                    sql += " and asscde in (";
                     sql += tmpstr;
                     sql += ")";
                 }
             }
             if (单选_显示业务员.Checked) {
-                sql += " group by t.agntcde, b.objtyp order by t.agntcde";
+                sql += " group by agntcde, objtyp order by agntcde";
             } else {
-                sql += " group by t.asscde, b.objtyp order by t.asscde";
+                sql += " group by asscde, objtyp order by asscde";
             }
-            
             List<tempData> tempDatas = new List<tempData>();
-            // 遍历所有数据库查询并汇总数据
-            foreach (var db in DatabaseInfos.GetDatabaseInfos()) {
+            foreach (var item in DatabaseInfos.GetDatabaseInfos()) {
                 try {
-                    using (var helper = SqlHelperFactory.OpenDatabase(db.GetConnString(), SqlType.Oracle)) {
+                    using (var helper = SqlHelperFactory.OpenDatabase(item.GetConnString(), SqlType.Oracle)) {
                         var list = helper.Select<tempData>(sql);
                         tempDatas.AddRange(list);
                     }
                 } catch (Exception ex) {
-                    Debug.Print($"查询数据库 {db.FactoryName} 失败: {ex.Message}");
+                    Debug.Print("SQL执行失败，语句：" + sql);
+                    MessageBox.Show(item.FactoryName + "连接出错了：" + ex.Message);
                 }
             }
 
@@ -266,6 +260,7 @@ namespace 易捷查询CSharp
         {
             public string objtyp { get; set; }
             public string agntcde { get; set; }
+            public string asscde { get; set; }
             public decimal 金额 { get; set; }
             public decimal 面积 { get; set; }
             public int 单数 { get; set; }
@@ -301,6 +296,7 @@ namespace 易捷查询CSharp
             public decimal 数码纸箱金额 { get; set; }
             public decimal 数码纸箱面积 { get; set; }
         }
+
 
 
 

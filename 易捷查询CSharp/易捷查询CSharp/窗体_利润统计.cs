@@ -29,14 +29,7 @@ namespace 易捷查询CSharp
                 列表_部门.DisplayMember = "TEMNME";
                 列表_部门.ValueMember = "TEMCDE";
 
-                // 调试：输出部门编码信息
-                var 部门表 = 模块_通用函数.易捷部门表 ();
-                System.Diagnostics.Debug.WriteLine("=== 部门表数据 ===");
-                foreach (System.Data.DataRow row in 部门表.Rows) {
-                    System.Diagnostics.Debug.WriteLine($"部门名称：{row["TEMNME"]}, 部门编码 (TEMCDE): {row["TEMCDE"]}, 部门编码 2(TEMCDE2): {row["TEMCDE2"]}");
-                }
-
-                列表_业务员.DataSource = 模块_通用函数.易捷业务员表 ().DefaultView;
+                列表_业务员.DataSource = 模块_通用函数.易捷业务员表 ();
                 列表_业务员.DisplayMember = "EMPNME";
                 列表_业务员.ValueMember = "EMPCDE";
 
@@ -56,15 +49,6 @@ namespace 易捷查询CSharp
                 列表_查询结果.Items.Clear();
 
                 string sql = BuildQueryString();
-
-                // 调试：输出 SQL 和筛选条件
-                System.Diagnostics.Debug.WriteLine("=== 查询 SQL ===");
-                System.Diagnostics.Debug.WriteLine(sql);
-                System.Diagnostics.Debug.WriteLine($"部门勾选数量：{列表_部门.CheckedItems.Count}");
-                System.Diagnostics.Debug.WriteLine($"业务员勾选数量：{列表_业务员.CheckedItems.Count}");
-                foreach (DataRowView rowview in 列表_部门.CheckedItems) {
-                    System.Diagnostics.Debug.WriteLine($"勾选的部门：名称={rowview["TEMNME"]}, 编码 (TEMCDE)={rowview["TEMCDE"]}, 编码 2(TEMCDE2)={rowview["TEMCDE2"]}");
-                }
 
                 List<利润统计数据> profitDataList = new List<利润统计数据>();
 
@@ -97,32 +81,53 @@ namespace 易捷查询CSharp
 
         private string BuildQueryString()
         {
-            // 使用正确的关联方式：ord_bas -> pb_clnt_atta -> pb_dept_member
-            // 注意：业务员信息现在从内存中获取，不在SQL中JOIN
+            // 修复后的SQL：使用正确的字段名关联 pb_dept_member 表
+            // quoprc = 报价单价, prices = 销售单价
             string sql = @"
 SELECT 
     TO_CHAR(b.created, 'yyyy-MM-dd') as 日期，
     b.serial as 单号，
     c.clntnme as 客户，
     b.prdnme as 产品，
-    ca.agntcde as 业务员编码，
-    nvl(b.quoprc, 0) * nvl(b.accnum, 0) as 报价总金额，
-    nvl(b.accamt, 0) as 卖价总金额，
-    nvl(b.accamt, 0) - nvl(b.quoprc, 0) * nvl(b.accnum, 0) as 利润差额，
-    case 
-        when nvl(b.quoprc, 0) * nvl(b.accnum, 0) = 0 then 0
-        else (nvl(b.accamt, 0) - nvl(b.quoprc, 0) * nvl(b.accnum, 0)) / (nvl(b.quoprc, 0) * nvl(b.accnum, 0)) * 100
-    end as 利率
+    e.empnme as 业务员，
+    d.dptnme as 部门，
+    NVL(b.quoprc, 0) as 报价金额，
+    NVL(b.prices, 0) as 卖价金额，
+    NVL(b.prices, 0) - NVL(b.quoprc, 0) as 利润差额，
+    CASE 
+        WHEN NVL(b.quoprc, 0) = 0 THEN NULL
+        ELSE ROUND((NVL(b.prices, 0) - NVL(b.quoprc, 0)) / NVL(b.quoprc, 0) * 100, 2)
+    END as 利率
 FROM ord_bas b
 LEFT JOIN pb_clnt c ON b.clntcde = c.clntcde
-LEFT JOIN pb_clnt_atta ca ON b.clntcde = ca.clntcde AND ca.isactive = 'Y'
+LEFT JOIN ord_ct t ON b.serial = t.serial
+LEFT JOIN pb_dept_member e ON t.agntcde = e.empcde
+LEFT JOIN pb_dept d ON e.dept_cde = d.dept_cde
 WHERE b.isactive = 'Y'
   AND b.created >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')" +
             @"  AND b.created < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
 
-            // 注意：部门和业务员筛选现在需要在内存中进行
-            // 这里只添加业务员编码的SQL筛选（如果勾选了具体业务员）
+            // 部门筛选 - 使用 dept_cde 字段
+            if (列表_部门.CheckedItems.Count > 0)
+            {
+                string tmpstr = "";
+                foreach (DataRowView rowview in 列表_部门.CheckedItems)
+                {
+                    string 部门编码 = rowview["TEMCDE"].ToString();
+                    if (部门编码 != "" && 部门编码 != null)
+                    {
+                        if (tmpstr != "") tmpstr += ",";
+                        tmpstr += "'" + 部门编码 + "'";
+                    }
+                }
 
+                if (tmpstr != "")
+                {
+                    sql += @" AND e.dept_cde IN (" + tmpstr + @")";
+                }
+            }
+
+            // 业务员筛选 - 直接使用 agntcde
             if (列表_业务员.CheckedItems.Count > 0)
             {
                 string tmpstr = "";
@@ -138,7 +143,7 @@ WHERE b.isactive = 'Y'
 
                 if (tmpstr != "")
                 {
-                    sql += @" AND ca.agntcde IN (" + tmpstr + @")";
+                    sql += @" AND t.agntcde IN (" + tmpstr + @")";
                 }
             }
 
@@ -157,101 +162,62 @@ WHERE b.isactive = 'Y'
                 sql += @" AND b.prdnme LIKE '%" + 文本_产品.Text.Trim() + "%'";
             }
 
-            // 利率筛选使用 ord_bas 表的字段计算，因为 ord_ct 没有 quoprc 字段
-            sql += @" AND (
-                case 
-                    when nvl(b.quoprc, 0) * nvl(b.accnum, 0) = 0 then 0
-                    else (nvl(b.accamt, 0) - nvl(b.quoprc, 0) * nvl(b.accnum, 0)) / (nvl(b.quoprc, 0) * nvl(b.accnum, 0)) * 100
-                end
-            ) BETWEEN " + 数值_利率从.Value.ToString() + " AND " + 数值_利率到.Value.ToString();
+            sql += @" ORDER BY b.created DESC";
 
             return sql;
         }
 
-        private void 显示结果 (List<利润统计数据> 利润列表)
+        private void 显示结果(List<利润统计数据> dataList)
         {
-            decimal 总报价 = 0;
-            decimal 总卖价 = 0;
-            decimal 总利润 = 0;
-            int 总单数 = 0;
-            decimal 平均利率 = 0;
+            列表_查询结果.Items.Clear();
 
-            // 预加载集团业务员数据到内存
-            模块_通用函数.加载集团业务员数据();
-
-            // 获取勾选的部门列表（用于内存筛选）
-            var 勾选部门列表 = new List<string>();
-            foreach (DataRowView rowview in 列表_部门.CheckedItems)
+            foreach (var item in dataList)
             {
-                string 部门名称 = rowview["TEMNME"].ToString();
-                if (!string.IsNullOrEmpty(部门名称))
-                {
-                    勾选部门列表.Add(部门名称);
-                }
+                // 利率筛选
+                if (item.利率 < 数值_利率从.Value || item.利率 > 数值_利率到.Value)
+                    continue;
+
+                ListViewItem lvItem = new ListViewItem(item.日期);
+                lvItem.SubItems.Add(item.单号);
+                lvItem.SubItems.Add(item.客户);
+                lvItem.SubItems.Add(item.产品);
+                lvItem.SubItems.Add(item.业务员);
+                lvItem.SubItems.Add(item.部门);
+                lvItem.SubItems.Add(item.报价金额.ToString("0.00"));
+                lvItem.SubItems.Add(item.卖价金额.ToString("0.00"));
+                lvItem.SubItems.Add(item.利润差额.ToString("0.00"));
+                lvItem.SubItems.Add(item.利率.ToString("0.00") + "%");
+
+                列表_查询结果.Items.Add(lvItem);
             }
 
-            foreach (var item in 利润列表)
+            // 添加汇总行
+            if (dataList.Count > 0)
             {
-                // 从内存中获取业务员信息（会自动补充缺失的）
-                var 业务员信息 = 模块_通用函数.获取业务员信息(item.业务员编码);
+                decimal 总报价 = dataList.Sum(x => x.报价金额);
+                decimal 总卖价 = dataList.Sum(x => x.卖价金额);
+                decimal 总利润 = dataList.Sum(x => x.利润差额);
+                decimal 平均利率 = 总报价 > 0 ? (总利润 / 总报价 * 100) : 0;
 
-                // 如果勾选了部门，进行过滤
-                if (勾选部门列表.Count > 0)
-                {
-                    // 统一部门名称格式（去掉空格）
-                    string 业务员部门 = 业务员信息.TEMNME?.Replace(" ", "") ?? "未知部门";
-                    bool 部门匹配 = false;
-                    foreach (var 勾选部门 in 勾选部门列表)
-                    {
-                        string 格式化勾选部门 = 勾选部门.Replace(" ", "");
-                        if (业务员部门.Contains(格式化勾选部门) || 格式化勾选部门.Contains(业务员部门))
-                        {
-                            部门匹配 = true;
-                            break;
-                        }
-                    }
-                    if (!部门匹配) continue; // 跳过不匹配的记录
-                }
+                ListViewItem sumItem = new ListViewItem("汇总");
+                sumItem.SubItems.Add("");
+                sumItem.SubItems.Add("");
+                sumItem.SubItems.Add("");
+                sumItem.SubItems.Add("");
+                sumItem.SubItems.Add("");
+                sumItem.SubItems.Add(总报价.ToString("0.00"));
+                sumItem.SubItems.Add(总卖价.ToString("0.00"));
+                sumItem.SubItems.Add(总利润.ToString("0.00"));
+                sumItem.SubItems.Add(平均利率.ToString("0.00") + "%");
+                sumItem.BackColor = System.Drawing.Color.LightYellow;
 
-                var 列项 = 列表_查询结果.Items.Add(item.日期);
-                列项.SubItems.Add(item.单号);
-                列项.SubItems.Add(item.客户);
-                列项.SubItems.Add(item.产品);
-                列项.SubItems.Add(业务员信息.EMPNME);  // 使用内存中的业务员姓名
-                列项.SubItems.Add(业务员信息.TEMNME);  // 使用内存中的部门名称
-                列项.SubItems.Add(item.报价金额.ToString("0.00"));
-                列项.SubItems.Add(item.卖价金额.ToString("0.00"));
-                列项.SubItems.Add(item.利润差额.ToString("0.00"));
-                列项.SubItems.Add(item.利率.ToString("0.00"));
-
-                总报价 += item.报价金额;
-                总卖价 += item.卖价金额;
-                总利润 += item.利润差额;
-                总单数++;
+                列表_查询结果.Items.Add(sumItem);
             }
-
-            if (总报价 != 0)
-            {
-                平均利率 = (总利润 / 总报价) * 100;
-            }
-
-            标签_总单数.Text = 总单数.ToString();
-            标签_总报价.Text = 总报价.ToString("0.00");
-            标签_总卖价.Text = 总卖价.ToString("0.00");
-            标签_总利润.Text = 总利润.ToString("0.00");
-            标签_平均利率.Text = 平均利率.ToString("0.00") + "%";
         }
 
         private void 按钮_导出_Click(object sender, EventArgs e)
         {
-            try
-            {
-                ExcelControl.ExportExcel.ListViewtoExcel(列表_查询结果);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("导出失败：" + ex.Message);
-            }
+            ExcelControl.ExportExcel.ListViewtoExcel(列表_查询结果);
         }
 
         private void 列表_部门_ItemCheck(object sender, ItemCheckEventArgs e)
@@ -259,41 +225,50 @@ WHERE b.isactive = 'Y'
             var count = 列表_部门.CheckedItems.Count;
             var 当前项 = 列表_部门.SelectedIndex;
             var 当前状态 = 列表_部门.GetItemChecked(当前项);
-            if (当前状态) {
+            if (当前状态)
+            {
                 count -= 1;
-            } else {
+            }
+            else
+            {
                 count += 1;
             }
-            if (count > 0) {
+            if (count > 0)
+            {
                 var tmpstr = "";
-                for (int i = 0; i < 列表_部门.Items.Count; i++) {
+                for (int i = 0; i < 列表_部门.Items.Count; i++)
+                {
                     var 该项状态 = 列表_部门.GetItemChecked(i);
                     if (i == 当前项) 该项状态 = !该项状态;
-                    if (该项状态 == true) {
-                        if (tmpstr != "") {
+                    if (该项状态 == true)
+                    {
+                        if (tmpstr != "")
+                        {
                             tmpstr += ",";
                         }
                         tmpstr += "'" + 列表_部门.GetItemText(列表_部门.Items[i]) + "'";
                     }
                 }
                 模块_通用函数.易捷业务员表().DefaultView.RowFilter = "TEMNME in (" + tmpstr + ")";
-            } else {
+            }
+            else
+            {
                 模块_通用函数.易捷业务员表().DefaultView.RowFilter = "";
             }
         }
+    }
 
-        public class 利润统计数据
-        {
-            public string 日期 { get; set; }
-            public string 单号 { get; set; }
-            public string 客户 { get; set; }
-            public string 产品 { get; set; }
-            public string 业务员编码 { get; set; }  // 存储编码，姓名从内存获取
-            public decimal 报价金额 { get; set; }
-            public decimal 卖价金额 { get; set; }
-            public decimal 利润差额 { get; set; }
-            public decimal 利率 { get; set; }
-        }
+    public class 利润统计数据
+    {
+        public string 日期 { get; set; }
+        public string 单号 { get; set; }
+        public string 客户 { get; set; }
+        public string 产品 { get; set; }
+        public string 业务员 { get; set; }
+        public string 部门 { get; set; }
+        public decimal 报价金额 { get; set; }
+        public decimal 卖价金额 { get; set; }
+        public decimal 利润差额 { get; set; }
+        public decimal 利率 { get; set; }
     }
 }
-
