@@ -259,7 +259,7 @@ namespace 易捷查询CSharp
             this.GroupBox7.Controls.Add(this.Label8);
             this.GroupBox7.Controls.Add(this.数值_利率从);
             this.GroupBox7.Controls.Add(this.数值_利率到);
-            this.GroupBox7.Location = new System.Drawing.Point(470, 180);
+            this.GroupBox7.Location = new System.Drawing.Point(676, 12);
             this.GroupBox7.Name = "GroupBox7";
             this.GroupBox7.Size = new System.Drawing.Size(200, 80);
             this.GroupBox7.TabIndex = 6;
@@ -287,8 +287,16 @@ namespace 易捷查询CSharp
             // 数值_利率从
             // 
             this.数值_利率从.Location = new System.Drawing.Point(73, 22);
-            this.数值_利率从.Minimum = new decimal(new int[] { 100000, 0, 0, -2147483648 });
-            this.数值_利率从.Maximum = new decimal(new int[] { 100000, 0, 0, 0 });
+            this.数值_利率从.Maximum = new decimal(new int[] {
+            100000,
+            0,
+            0,
+            0});
+            this.数值_利率从.Minimum = new decimal(new int[] {
+            100000,
+            0,
+            0,
+            -2147483648});
             this.数值_利率从.Name = "数值_利率从";
             this.数值_利率从.Size = new System.Drawing.Size(121, 21);
             this.数值_利率从.TabIndex = 2;
@@ -296,15 +304,23 @@ namespace 易捷查询CSharp
             // 数值_利率到
             // 
             this.数值_利率到.Location = new System.Drawing.Point(73, 48);
-            this.数值_利率到.Minimum = new decimal(new int[] { 100000, 0, 0, -2147483648 });
-            this.数值_利率到.Maximum = new decimal(new int[] { 100000, 0, 0, 0 });
+            this.数值_利率到.Maximum = new decimal(new int[] {
+            100000,
+            0,
+            0,
+            0});
+            this.数值_利率到.Minimum = new decimal(new int[] {
+            100000,
+            0,
+            0,
+            -2147483648});
             this.数值_利率到.Name = "数值_利率到";
             this.数值_利率到.Size = new System.Drawing.Size(121, 21);
             this.数值_利率到.TabIndex = 3;
             // 
             // 按钮_查询
             // 
-            this.按钮_查询.Location = new System.Drawing.Point(12, 220);
+            this.按钮_查询.Location = new System.Drawing.Point(676, 169);
             this.按钮_查询.Name = "按钮_查询";
             this.按钮_查询.Size = new System.Drawing.Size(90, 40);
             this.按钮_查询.TabIndex = 7;
@@ -314,7 +330,7 @@ namespace 易捷查询CSharp
             // 
             // 按钮_导出
             // 
-            this.按钮_导出.Location = new System.Drawing.Point(110, 220);
+            this.按钮_导出.Location = new System.Drawing.Point(774, 169);
             this.按钮_导出.Name = "按钮_导出";
             this.按钮_导出.Size = new System.Drawing.Size(90, 40);
             this.按钮_导出.TabIndex = 8;
@@ -341,9 +357,9 @@ namespace 易捷查询CSharp
             this.列表_查询结果.FullRowSelect = true;
             this.列表_查询结果.GridLines = true;
             this.列表_查询结果.HideSelection = false;
-            this.列表_查询结果.Location = new System.Drawing.Point(12, 270);
+            this.列表_查询结果.Location = new System.Drawing.Point(12, 218);
             this.列表_查询结果.Name = "列表_查询结果";
-            this.列表_查询结果.Size = new System.Drawing.Size(670, 310);
+            this.列表_查询结果.Size = new System.Drawing.Size(984, 369);
             this.列表_查询结果.TabIndex = 9;
             this.列表_查询结果.UseCompatibleStateImageBehavior = false;
             this.列表_查询结果.View = System.Windows.Forms.View.Details;
@@ -412,9 +428,9 @@ namespace 易捷查询CSharp
             this.GroupBox8.Controls.Add(this.标签_总利润);
             this.GroupBox8.Controls.Add(this.标签_平均利率);
             this.GroupBox8.Controls.Add(this.标签_总单数);
-            this.GroupBox8.Location = new System.Drawing.Point(12, 590);
+            this.GroupBox8.Location = new System.Drawing.Point(12, 597);
             this.GroupBox8.Name = "GroupBox8";
-            this.GroupBox8.Size = new System.Drawing.Size(670, 80);
+            this.GroupBox8.Size = new System.Drawing.Size(984, 80);
             this.GroupBox8.TabIndex = 10;
             this.GroupBox8.TabStop = false;
             this.GroupBox8.Text = "汇总";
@@ -422,7 +438,7 @@ namespace 易捷查询CSharp
             // Label13
             // 
             this.Label13.AutoSize = true;
-            this.Label13.Location = new System.Drawing.Point(520, 52);
+            this.Label13.Location = new System.Drawing.Point(529, 32);
             this.Label13.Name = "Label13";
             this.Label13.Size = new System.Drawing.Size(53, 12);
             this.Label13.TabIndex = 9;
@@ -431,89 +447,89 @@ namespace 易捷查询CSharp
             // Label12
             // 
             this.Label12.AutoSize = true;
-            this.Label12.Location = new System.Drawing.Point(390, 52);
+            this.Label12.Location = new System.Drawing.Point(390, 32);
             this.Label12.Name = "Label12";
-            this.Label12.Size = new System.Drawing.Size(53, 12);
+            this.Label12.Size = new System.Drawing.Size(41, 12);
             this.Label12.TabIndex = 8;
             this.Label12.Text = "总利润";
             // 
             // Label11
             // 
             this.Label11.AutoSize = true;
-            this.Label11.Location = new System.Drawing.Point(260, 52);
+            this.Label11.Location = new System.Drawing.Point(260, 32);
             this.Label11.Name = "Label11";
-            this.Label11.Size = new System.Drawing.Size(53, 12);
+            this.Label11.Size = new System.Drawing.Size(41, 12);
             this.Label11.TabIndex = 7;
             this.Label11.Text = "总卖价";
             // 
             // Label10
             // 
             this.Label10.AutoSize = true;
-            this.Label10.Location = new System.Drawing.Point(130, 52);
+            this.Label10.Location = new System.Drawing.Point(130, 32);
             this.Label10.Name = "Label10";
-            this.Label10.Size = new System.Drawing.Size(53, 12);
+            this.Label10.Size = new System.Drawing.Size(41, 12);
             this.Label10.TabIndex = 6;
             this.Label10.Text = "总报价";
             // 
             // Label9
             // 
             this.Label9.AutoSize = true;
-            this.Label9.Location = new System.Drawing.Point(14, 52);
+            this.Label9.Location = new System.Drawing.Point(14, 32);
             this.Label9.Name = "Label9";
             this.Label9.Size = new System.Drawing.Size(41, 12);
             this.Label9.TabIndex = 5;
             this.Label9.Text = "总单数";
             // 
-            // 标签_总单数
+            // 标签_总卖价
             // 
-            this.标签_总单数.AutoSize = true;
-            this.标签_总单数.Location = new System.Drawing.Point(65, 26);
-            this.标签_总单数.Name = "标签_总单数";
-            this.标签_总单数.Size = new System.Drawing.Size(11, 12);
-            this.标签_总单数.TabIndex = 4;
-            this.标签_总单数.Text = "0";
+            this.标签_总卖价.Location = new System.Drawing.Point(315, 30);
+            this.标签_总卖价.Name = "标签_总卖价";
+            this.标签_总卖价.Size = new System.Drawing.Size(70, 16);
+            this.标签_总卖价.TabIndex = 2;
+            this.标签_总卖价.Text = "0";
+            this.标签_总卖价.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // 标签_总报价
             // 
-            this.标签_总报价.AutoSize = true;
-            this.标签_总报价.Location = new System.Drawing.Point(180, 26);
+            this.标签_总报价.Location = new System.Drawing.Point(185, 30);
             this.标签_总报价.Name = "标签_总报价";
-            this.标签_总报价.Size = new System.Drawing.Size(11, 12);
+            this.标签_总报价.Size = new System.Drawing.Size(70, 16);
             this.标签_总报价.TabIndex = 3;
             this.标签_总报价.Text = "0";
-            // 
-            // 标签_总卖价
-            // 
-            this.标签_总卖价.AutoSize = true;
-            this.标签_总卖价.Location = new System.Drawing.Point(310, 26);
-            this.标签_总卖价.Name = "标签_总卖价";
-            this.标签_总卖价.Size = new System.Drawing.Size(11, 12);
-            this.标签_总卖价.TabIndex = 2;
-            this.标签_总卖价.Text = "0";
+            this.标签_总报价.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // 标签_总利润
             // 
-            this.标签_总利润.AutoSize = true;
-            this.标签_总利润.Location = new System.Drawing.Point(440, 26);
+            this.标签_总利润.Location = new System.Drawing.Point(445, 30);
             this.标签_总利润.Name = "标签_总利润";
-            this.标签_总利润.Size = new System.Drawing.Size(11, 12);
+            this.标签_总利润.Size = new System.Drawing.Size(70, 16);
             this.标签_总利润.TabIndex = 1;
             this.标签_总利润.Text = "0";
+            this.标签_总利润.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // 标签_平均利率
             // 
-            this.标签_平均利率.AutoSize = true;
-            this.标签_平均利率.Location = new System.Drawing.Point(580, 26);
+            this.标签_平均利率.Location = new System.Drawing.Point(588, 30);
             this.标签_平均利率.Name = "标签_平均利率";
-            this.标签_平均利率.Size = new System.Drawing.Size(11, 12);
+            this.标签_平均利率.Size = new System.Drawing.Size(80, 16);
             this.标签_平均利率.TabIndex = 0;
             this.标签_平均利率.Text = "0";
+            this.标签_平均利率.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
+            // 标签_总单数
+            // 
+            this.标签_总单数.Location = new System.Drawing.Point(60, 30);
+            this.标签_总单数.Name = "标签_总单数";
+            this.标签_总单数.Size = new System.Drawing.Size(60, 16);
+            this.标签_总单数.TabIndex = 4;
+            this.标签_总单数.Text = "0";
+            this.标签_总单数.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // 窗体_利润统计
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(694, 680);
+            this.ClientSize = new System.Drawing.Size(1008, 687);
             this.Controls.Add(this.GroupBox8);
             this.Controls.Add(this.列表_查询结果);
             this.Controls.Add(this.按钮_导出);
@@ -540,6 +556,7 @@ namespace 易捷查询CSharp
             this.GroupBox6.ResumeLayout(false);
             this.GroupBox6.PerformLayout();
             this.GroupBox7.ResumeLayout(false);
+            this.GroupBox7.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.数值_利率从)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.数值_利率到)).EndInit();
             this.GroupBox8.ResumeLayout(false);

@@ -1,4 +1,4 @@
-﻿using Com.Ekyb.CrossFactoryOrder.Common;
+using Com.Ekyb.CrossFactoryOrder.Common;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -36,14 +36,10 @@ namespace 易捷查询CSharp
             //}
         }
         private void 按钮_查询_Click(object sender, EventArgs e) {
-            string sql = null;
-            if (单选_显示业务员.Checked) {
-                sql = "select objtyp, agntcde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage*accnum),0) as 面积, count(*) as 单数 from v_ord where status='Y'";
-            } else {
-                sql = "select objtyp, asscde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage*accnum),0) as 面积, count(*) as 单数 from v_ord where status='Y'";
-            }
-            sql += " and ptdate >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
-            sql += " and ptdate < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
+            // 构建WHERE条件部分（通用）
+            var where条件 = " where status='Y'";
+            where条件 += " and ptdate >= to_date('" + 日期_从.Value.Date.ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
+            where条件 += " and ptdate < to_date('" + 日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd") + "', 'yyyy-MM-dd')";
 
             var tmpstr = "";
             if (列表_业务员.CheckedItems.Count == 0) {
@@ -62,9 +58,9 @@ namespace 易捷查询CSharp
                         }
                     }
                     if (tmpstr != "") {
-                        sql += " and agntcde in (";
-                        sql += tmpstr;
-                        sql += ")";
+                        where条件 += " and agntcde in (";
+                        where条件 += tmpstr;
+                        where条件 += ")";
                     }
                 }
             } else {
@@ -84,9 +80,9 @@ namespace 易捷查询CSharp
                     }
                 }
                 if (tmpstr != "") {
-                    sql += " and agntcde in (";
-                    sql += tmpstr;
-                    sql += ")";
+                    where条件 += " and agntcde in (";
+                    where条件 += tmpstr;
+                    where条件 += ")";
                 }
             }
             if (列表_跟单员.CheckedItems.Count > 0) {
@@ -99,25 +95,33 @@ namespace 易捷查询CSharp
                     }
                 }
                 if (tmpstr != "") {
-                    sql += " and asscde in (";
-                    sql += tmpstr;
-                    sql += ")";
+                    where条件 += " and asscde in (";
+                    where条件 += tmpstr;
+                    where条件 += ")";
                 }
             }
-            if (单选_显示业务员.Checked) {
-                sql += " group by agntcde, objtyp order by agntcde";
-            } else {
-                sql += " group by asscde, objtyp order by asscde";
-            }
+
             List<tempData> tempDatas = new List<tempData>();
             foreach (var item in DatabaseInfos.GetDatabaseInfos()) {
                 try {
+                    // 所有系统都使用 v_ord 视图（新系统和旧系统都支持）
+                    string sql;
+                    if (单选_显示业务员.Checked) {
+                        sql = "select objtyp, agntcde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage*accnum),0) as 面积, count(*) as 单数 from v_ord " +
+                              where条件 +
+                              " group by agntcde, objtyp order by agntcde";
+                    } else {
+                        sql = "select objtyp, asscde, nvl(sum(accamt),0) as 金额, nvl(sum(acreage*accnum),0) as 面积, count(*) as 单数 from v_ord " +
+                              where条件 +
+                              " group by asscde, objtyp order by asscde";
+                    }
+
                     using (var helper = SqlHelperFactory.OpenDatabase(item.GetConnString(), SqlType.Oracle)) {
                         var list = helper.Select<tempData>(sql);
                         tempDatas.AddRange(list);
                     }
                 } catch (Exception ex) {
-                    Debug.Print("SQL执行失败，语句：" + sql);
+                    Debug.Print("SQL执行失败：" + ex.Message);
                     MessageBox.Show(item.FactoryName + "连接出错了：" + ex.Message);
                 }
             }
@@ -296,7 +300,6 @@ namespace 易捷查询CSharp
             public decimal 数码纸箱金额 { get; set; }
             public decimal 数码纸箱面积 { get; set; }
         }
-
 
 
 

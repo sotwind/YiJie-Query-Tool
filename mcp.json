@@ -1,0 +1,69 @@
+{
+  "mcpServers": {
+    "oracle-yijie-laocang": {
+      "type": "stdio",
+      "command": "H:\\TraeDev\\易捷业务数据查询\\sqlcl\\bin\\sql.exe",
+      "args": [
+        "-thin",
+        "-mcp",
+        "-home",
+        "H:\\TraeDev\\易捷业务数据查询\\sqlcl-home",
+        "-name",
+        "laocang"
+      ],
+      "env": {}
+    },
+    "oracle-yijie-xinchang": {
+      "type": "stdio",
+      "command": "H:\\TraeDev\\易捷业务数据查询\\sqlcl\\bin\\sql.exe",
+      "args": [
+        "-thin",
+        "-mcp",
+        "-home",
+        "H:\\TraeDev\\易捷业务数据查询\\sqlcl-home",
+        "-name",
+        "xinchang"
+      ],
+      "env": {}
+    },
+    "oracle-yijie-wensen": {
+      "type": "stdio",
+      "command": "H:\\TraeDev\\易捷业务数据查询\\sqlcl\\bin\\sql.exe",
+      "args": [
+        "-thin",
+        "-mcp",
+        "-home",
+        "H:\\TraeDev\\易捷业务数据查询\\sqlcl-home",
+        "-name",
+        "wensen"
+      ],
+      "env": {}
+    },
+    "oracle-yijie-linhai": {
+      "type": "stdio",
+      "command": "H:\\TraeDev\\易捷业务数据查询\\sqlcl\\bin\\sql.exe",
+      "args": [
+        "-thin",
+        "-mcp",
+        "-home",
+        "H:\\TraeDev\\易捷业务数据查询\\sqlcl-home",
+        "-name",
+        "linhai"
+      ],
+      "env": {}
+    },
+    "oracle-yijie-jituan": {
+      "type": "stdio",
+      "command": "H:\\TraeDev\\易捷业务数据查询\\sqlcl\\bin\\sql.exe",
+      "args": [
+        "-thin",
+        "-mcp",
+        "-home",
+        "H:\\TraeDev\\易捷业务数据查询\\sqlcl-home",
+        "-name",
+        "jituan"
+      ],
+      "env": {}
+    }
+  }
+}

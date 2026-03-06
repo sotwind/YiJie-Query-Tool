@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="DatabaseInfos.cs" />
     <Compile Include="模块_通用函数.cs" />
+    <Compile Include="DiagnoseORA01427.cs" />
     <Compile Include="窗体_功能列表.cs">
       <SubType>Form</SubType>
     </Compile>

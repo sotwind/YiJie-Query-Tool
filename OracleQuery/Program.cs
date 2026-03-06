@@ -1,7 +1,6 @@
 using System;
 using System.Data;
 using Oracle.ManagedDataAccess.Client;
-using System.Collections.Generic;
 
 namespace OracleQuery
 {
@@ -9,103 +8,99 @@ namespace OracleQuery
     {
         static void Main(string[] args)
         {
-            string connString = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=36.138.130.91)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=dbms)));User Id=fgrp;Password=kuke.fgrp";
+            // 新厂新系统
+            string connString = "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=36.134.7.141)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=dbms)));User Id=b0003;Password=kuke.b0003";
 
-            using (OracleConnection conn = new OracleConnection(connString))
+            Console.WriteLine("========================================================================================================================");
+            Console.WriteLine("查询新厂新系统 ord_bas 和 ord_ct 表的数量字段");
+            Console.WriteLine("========================================================================================================================");
+
+            try
             {
-                try
+                using (OracleConnection conn = new OracleConnection(connString))
                 {
                     conn.Open();
-                    Console.WriteLine("连接成功！");
+                    Console.WriteLine("✓ 连接成功\n");
 
-                    // 查询所有表名
-                    string sqlTables = "SELECT table_name FROM user_tables ORDER BY table_name";
-                    using (OracleCommand cmd = new OracleCommand(sqlTables, conn))
-                    using (OracleDataReader reader = cmd.ExecuteReader())
+                    using (OracleCommand cmd = new OracleCommand())
                     {
-                        Console.WriteLine("\n所有表名：");
-                        List<string> tables = new List<string>();
-                        while (reader.Read())
+                        cmd.Connection = conn;
+                        
+                        // 查询 ord_bas 表的数量字段
+                        Console.WriteLine("ORD_BAS 表的数量相关字段：");
+                        cmd.CommandText = @"
+                            SELECT column_name, data_type
+                            FROM all_tab_columns
+                            WHERE table_name = 'ORD_BAS'
+                              AND (column_name LIKE '%NUM%' 
+                                   OR column_name LIKE '%QTY%'
+                                   OR column_name LIKE '%COUNT%')
+                            ORDER BY column_name
+                        ";
+                        
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            string tableName = reader.GetString(0);
-                            tables.Add(tableName);
-                            Console.WriteLine(tableName);
+                            while (reader.Read())
+                            {
+                                Console.WriteLine($"  {reader.GetString(0),-20} {reader.GetString(1)}");
+                            }
                         }
 
-                        // 查找可能包含箱型信息的表
-                        Console.WriteLine("\n\n可能包含箱型信息的表：");
-                        foreach (var table in tables)
+                        // 查询 ord_ct 表的数量字段
+                        Console.WriteLine("\nORD_CT 表的数量相关字段：");
+                        cmd.CommandText = @"
+                            SELECT column_name, data_type
+                            FROM all_tab_columns
+                            WHERE table_name = 'ORD_CT'
+                              AND (column_name LIKE '%NUM%' 
+                                   OR column_name LIKE '%QTY%'
+                                   OR column_name LIKE '%COUNT%')
+                            ORDER BY column_name
+                        ";
+                        
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            string lowerTable = table.ToLower();
-                            if (lowerTable.Contains("box") || lowerTable.Contains("箱") || 
-                                lowerTable.Contains("carton") || lowerTable.Contains("pack") ||
-                                lowerTable.Contains("type") || lowerTable.Contains("规格") ||
-                                lowerTable.Contains("formula") || lowerTable.Contains("公式"))
+                            while (reader.Read())
                             {
-                                Console.WriteLine($"  {table}");
+                                Console.WriteLine($"  {reader.GetString(0),-20} {reader.GetString(1)}");
+                            }
+                        }
+
+                        // 查询示例数据
+                        Console.WriteLine("\n示例数据（ord_bas + ord_ct）：");
+                        cmd.CommandText = @"
+                            SELECT b.SERIAL, b.PRICES, b.QUOPRC, t.ACCNUM
+                            FROM ORD_BAS b
+                            LEFT JOIN ORD_CT t ON b.CLIENTID = t.CLIENTID AND b.ORGCDE = t.ORGCDE AND b.SERIAL = t.SERIAL
+                            WHERE ROWNUM <= 5
+                              AND b.ISACTIVE = 'Y'
+                        ";
+                        
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            Console.WriteLine($"{"单号",-15} {"PRICES",10} {"QUOPRC",10} {"ACCNUM",10}");
+                            Console.WriteLine(new string('-', 50));
+                            while (reader.Read())
+                            {
+                                string serial = reader.IsDBNull(0) ? "" : reader.GetString(0);
+                                decimal prices = reader.IsDBNull(1) ? 0 : reader.GetDecimal(1);
+                                decimal quoprc = reader.IsDBNull(2) ? 0 : reader.GetDecimal(2);
+                                decimal accnum = reader.IsDBNull(3) ? 0 : reader.GetDecimal(3);
+                                
+                                Console.WriteLine($"{serial,-15} {prices,10:0.00} {quoprc,10:0.00} {accnum,10:0.00}");
                             }
                         }
                     }
-
-                    // 查询可能相关的表的列信息
-                    Console.WriteLine("\n\n查询可能相关表的列结构：");
-                    string[] possibleTables = { "PB_BOX", "PB_CARTON", "PB_PACK", "PB_TYPE", "PB_FORMULA", "PB_BOXTYPE" };
-                    
-                    foreach (var tableName in possibleTables)
-                    {
-                        string sqlColumns = $"SELECT column_name, data_type FROM user_tab_columns WHERE table_name = '{tableName.ToUpper()}' ORDER BY column_id";
-                        try
-                        {
-                            using (OracleCommand cmd = new OracleCommand(sqlColumns, conn))
-                            using (OracleDataReader reader = cmd.ExecuteReader())
-                            {
-                                if (reader.HasRows)
-                                {
-                                    Console.WriteLine($"\n表 {tableName} 的列结构：");
-                                    while (reader.Read())
-                                    {
-                                        Console.WriteLine($"  {reader.GetString(0)} - {reader.GetString(1)}");
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // 表不存在，跳过
-                        }
-                    }
-
-                    // 查询包含"BOX"或"箱"的表
-                    Console.WriteLine("\n\n搜索包含BOX或箱的表：");
-                    string sqlSearch = "SELECT table_name FROM user_tables WHERE UPPER(table_name) LIKE '%BOX%' OR UPPER(table_name) LIKE '%CARTON%' ORDER BY table_name";
-                    using (OracleCommand cmd = new OracleCommand(sqlSearch, conn))
-                    using (OracleDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            string tableName = reader.GetString(0);
-                            Console.WriteLine($"  找到表: {tableName}");
-                            
-                            // 显示该表的列信息
-                            string sqlColumns = $"SELECT column_name, data_type FROM user_tab_columns WHERE table_name = '{tableName}' ORDER BY column_id";
-                            using (OracleCommand cmd2 = new OracleCommand(sqlColumns, conn))
-                            using (OracleDataReader reader2 = cmd2.ExecuteReader())
-                            {
-                                Console.WriteLine("    列结构：");
-                                while (reader2.Read())
-                                {
-                                    Console.WriteLine($"      {reader2.GetString(0)} - {reader2.GetString(1)}");
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"错误: {ex.Message}");
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ 错误：{ex.Message}");
+            }
 
+            Console.WriteLine("\n========================================================================================================================");
+            Console.WriteLine("查询完成！");
+            Console.WriteLine("========================================================================================================================");
             Console.WriteLine("\n按任意键退出...");
             Console.ReadKey();
         }
