@@ -54,8 +54,8 @@ namespace 易捷查询CSharp
                 {
                     try
                     {
-                        // 根据服务器类型生成不同的SQL
-                        string sql = BuildQueryString(db.ServerType);
+                        // 根据服务器类型和工厂名称生成不同的SQL
+                        string sql = BuildQueryString(db.ServerType, db.FactoryName);
 
                         using (var helper = SqlHelperFactory.OpenDatabase(db.GetConnString(), SqlType.Oracle))
                         {
@@ -77,22 +77,108 @@ namespace 易捷查询CSharp
             }
         }
 
-        private string BuildQueryString(string serverType)
+        private string BuildQueryString(string serverType, string factoryName)
         {
             string sql;
 
-            if (serverType == "新系统")
+            // 新厂：使用新的基础表查询方式（绕过 V_ORD 视图，避免 ORA-01427）
+            if (factoryName == "新厂新系统")
             {
-                // 新系统：使用 V_ORD 视图 LEFT JOIN ORD_BAS 表获取报价单价
+                // 新系统：绕过 V_ORD 视图，直接查询基础表
+                // 避免 V_ORD 视图中子查询返回多行导致 ORA-01427 错误
+                // 业务员编码从 pb_clnt.agntcde 获取
+                // 业务逻辑：
+                // 1. 排除未审核数据（STATUS != 'Y'）
+                // 2. 排除 Z 开头单号且业务员为李仰忠的数据
+                // 3. 森林包装集团股份有限公司 + 李仰忠 的业务员转换为莫梦辉
+                sql = $@"
+SELECT 
+    TO_CHAR(b.PTDATE, 'yyyy-MM-dd') as 日期,
+    b.SERIAL as 单号,
+    c.CLNTNME as 客户,
+    b.PRDNME as 产品,
+    CASE 
+        WHEN c.CLNTNME = '森林包装集团股份有限公司' AND c.AGNTCDE = '13655860812' 
+        THEN '13586269539' 
+        ELSE c.AGNTCDE 
+    END as 业务员编码,
+    NVL(b.QUOPRC, 0) * NVL(b.ACCNUM, 0) as 报价总金额,
+    NVL(b.PRICES, 0) * NVL(b.ACCNUM, 0) as 卖价总金额,
+    NVL(b.PRICES, 0) * NVL(b.ACCNUM, 0) - NVL(b.QUOPRC, 0) * NVL(b.ACCNUM, 0) as 毛利,
+    CASE 
+        WHEN NVL(b.QUOPRC, 0) * NVL(b.ACCNUM, 0) = 0 THEN NULL
+        ELSE ROUND((NVL(b.PRICES, 0) * NVL(b.ACCNUM, 0) - NVL(b.QUOPRC, 0) * NVL(b.ACCNUM, 0)) / (NVL(b.QUOPRC, 0) * NVL(b.ACCNUM, 0)) * 100, 2)
+    END as 利率
+FROM ORD_CT t
+JOIN ORD_BAS b ON t.CLIENTID = b.CLIENTID AND t.ORGCDE = b.ORGCDE AND t.SERIAL = b.SERIAL
+LEFT JOIN PB_CLNT c ON b.CLIENTID = c.CLIENTID AND b.ORGCDE = c.ORGCDE AND b.CLNTCDE = c.CLNTCDE
+WHERE t.ISACTIVE = 'Y'
+  AND b.STATUS = 'Y'
+  AND NOT (b.SERIAL LIKE 'Z%' AND c.AGNTCDE = '13655860812')
+  AND b.PTDATE >= to_date('{日期_从.Value.Date.ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')
+  AND b.PTDATE < to_date('{日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')";
+
+                // 业务员筛选
+                if (列表_业务员.CheckedItems.Count > 0)
+                {
+                    string tmpstr = "";
+                    foreach (DataRowView rowview in 列表_业务员.CheckedItems)
+                    {
+                        string 业务员编码 = rowview["EMPCDE"].ToString();
+                        if (业务员编码 != "" && 业务员编码 != null)
+                        {
+                            if (tmpstr != "") tmpstr += ",";
+                            tmpstr += "'" + 业务员编码 + "'";
+                        }
+                    }
+
+                    if (tmpstr != "")
+                    {
+                        // 注意：业务员筛选需要考虑转换后的业务员编码
+                        // 森林包装 + 李仰忠 转换为 莫梦辉 的编码
+                        sql += " AND CASE WHEN c.CLNTNME = '森林包装集团股份有限公司' AND c.AGNTCDE = '13655860812' THEN '13586269539' ELSE c.AGNTCDE END IN (" + tmpstr + ")";
+                    }
+                }
+
+                // 通用筛选条件
+                if (文本_客户.Text.Trim() != "")
+                {
+                    sql += " AND c.CLNTNME LIKE '%" + 文本_客户.Text.Trim() + "%'";
+                }
+
+                if (文本_单号.Text.Trim() != "")
+                {
+                    sql += " AND b.SERIAL LIKE '%" + 文本_单号.Text.Trim() + "%'";
+                }
+
+                if (文本_产品.Text.Trim() != "")
+                {
+                    sql += " AND b.PRDNME LIKE '%" + 文本_产品.Text.Trim() + "%'";
+                }
+
+                sql += " ORDER BY b.PTDATE DESC";
+            }
+            // 老厂和温森：使用 V_ORD 视图查询方式
+            else if (factoryName == "老厂新系统" || factoryName == "温森新系统")
+            {
+                // 老厂和温森：使用 V_ORD 视图 LEFT JOIN ORD_BAS 表获取报价单价
                 // V_ORD 提供客户、产品、日期、数量、卖价等信息
                 // ORD_BAS 提供报价单价 QUOPRC
+                // 业务逻辑：
+                // 1. 排除未审核数据（STATUS = 'Y'）
+                // 2. 排除 Z 开头单号且业务员为李仰忠的数据
+                // 3. 森林包装集团股份有限公司 + 李仰忠 的业务员转换为莫梦辉
                 sql = $@"
 SELECT 
     TO_CHAR(v.PTDATE, 'yyyy-MM-dd') as 日期,
     v.SERIAL as 单号,
     v.CLNTNME as 客户,
     v.PRDNME as 产品,
-    v.AGNTCDE as 业务员编码,
+    CASE 
+        WHEN v.CLNTNME = '森林包装集团股份有限公司' AND v.AGNTCDE = '13655860812' 
+        THEN '13586269539' 
+        ELSE v.AGNTCDE 
+    END as 业务员编码,
     NVL(b.QUOPRC, 0) * NVL(v.ACCNUM, 0) as 报价总金额,
     NVL(v.PRICES, 0) * NVL(v.ACCNUM, 0) as 卖价总金额,
     NVL(v.PRICES, 0) * NVL(v.ACCNUM, 0) - NVL(b.QUOPRC, 0) * NVL(v.ACCNUM, 0) as 毛利,
@@ -102,7 +188,8 @@ SELECT
     END as 利率
 FROM V_ORD v
 LEFT JOIN ORD_BAS b ON v.SERIAL = b.SERIAL AND v.CLIENTID = b.CLIENTID AND v.ORGCDE = b.ORGCDE
-WHERE v.ISACTIVE = 'Y'
+WHERE v.STATUS = 'Y'
+  AND NOT (v.SERIAL LIKE 'Z%' AND v.AGNTCDE = '13655860812')
   AND v.PTDATE >= to_date('{日期_从.Value.Date.ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')
   AND v.PTDATE < to_date('{日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')";
 
@@ -122,7 +209,9 @@ WHERE v.ISACTIVE = 'Y'
 
                     if (tmpstr != "")
                     {
-                        sql += " AND v.AGNTCDE IN (" + tmpstr + ")";
+                        // 注意：业务员筛选需要考虑转换后的业务员编码
+                        // 森林包装 + 李仰忠 转换为 莫梦辉 的编码
+                        sql += " AND CASE WHEN v.CLNTNME = '森林包装集团股份有限公司' AND v.AGNTCDE = '13655860812' THEN '13586269539' ELSE v.AGNTCDE END IN (" + tmpstr + ")";
                     }
                 }
 
@@ -144,18 +233,27 @@ WHERE v.ISACTIVE = 'Y'
 
                 sql += " ORDER BY v.PTDATE DESC";
             }
+            // 临海（旧系统）：使用原来的旧系统查询方式
             else
             {
                 // 旧系统（临海）：使用 V_ORD 视图 LEFT JOIN ORD_CT 表获取报价单价
                 // V_ORD 提供客户、产品、日期、数量、卖价等信息
                 // ORD_CT 提供报价单价 AGNTPRC
+                // 业务逻辑：
+                // 1. 排除未审核数据（STATUS = 'Y'）
+                // 2. 排除 Z 开头单号且业务员为李仰忠的数据
+                // 3. 森林包装集团股份有限公司 + 李仰忠 的业务员转换为莫梦辉
                 sql = $@"
 SELECT 
     TO_CHAR(v.PTDATE, 'yyyy-MM-dd') as 日期,
     v.SERIAL as 单号,
     v.CLNTNME as 客户,
     v.PRDNME as 产品,
-    v.AGNTCDE as 业务员编码,
+    CASE 
+        WHEN v.CLNTNME = '森林包装集团股份有限公司' AND v.AGNTCDE = '13655860812' 
+        THEN '13586269539' 
+        ELSE v.AGNTCDE 
+    END as 业务员编码,
     NVL(ct.AGNTPRC, 0) * NVL(v.ACCNUM, 0) as 报价总金额,
     NVL(v.PRICES, 0) * NVL(v.ACCNUM, 0) as 卖价总金额,
     NVL(v.PRICES, 0) * NVL(v.ACCNUM, 0) - NVL(ct.AGNTPRC, 0) * NVL(v.ACCNUM, 0) as 毛利,
@@ -165,7 +263,8 @@ SELECT
     END as 利率
 FROM V_ORD v
 LEFT JOIN ORD_CT ct ON v.SERIAL = ct.SERIAL AND v.CLIENTID = ct.CLIENTID AND v.ORGCDE = ct.ORGCDE
-WHERE v.ISACTIVE = 'Y'
+WHERE v.STATUS = 'Y'
+  AND NOT (v.SERIAL LIKE 'Z%' AND v.AGNTCDE = '13655860812')
   AND v.PTDATE >= to_date('{日期_从.Value.Date.ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')
   AND v.PTDATE < to_date('{日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')";
 
@@ -185,7 +284,9 @@ WHERE v.ISACTIVE = 'Y'
 
                     if (tmpstr != "")
                     {
-                        sql += " AND v.AGNTCDE IN (" + tmpstr + ")";
+                        // 注意：业务员筛选需要考虑转换后的业务员编码
+                        // 森林包装 + 李仰忠 转换为 莫梦辉 的编码
+                        sql += " AND CASE WHEN v.CLNTNME = '森林包装集团股份有限公司' AND v.AGNTCDE = '13655860812' THEN '13586269539' ELSE v.AGNTCDE END IN (" + tmpstr + ")";
                     }
                 }
 
