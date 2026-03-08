@@ -66,11 +66,11 @@ namespace 易捷查询CSharp
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(74, 170);
+            this.label1.Location = new System.Drawing.Point(74, 153);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(263, 12);
+            this.label1.Size = new System.Drawing.Size(263, 24);
             this.label1.TabIndex = 5;
-            this.label1.Text = "20260307 增加利润统计功能，优化数据查询逻辑";
+            this.label1.Text = "20260307 增加利润统计功能，优化数据查询逻辑\r\n20260307.1 移除带\".\"的补单数据";
             // 
             // 窗体_功能列表
             // 
@@ -83,7 +83,7 @@ namespace 易捷查询CSharp
             this.Controls.Add(this.按钮_销售员图);
             this.Name = "窗体_功能列表";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "易捷查询 20260307";
+            this.Text = "易捷查询 20260307.1";
             this.Load += new System.EventHandler(this.窗体_功能列表_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

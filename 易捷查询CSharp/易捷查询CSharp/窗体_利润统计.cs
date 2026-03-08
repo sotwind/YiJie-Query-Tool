@@ -115,8 +115,9 @@ LEFT JOIN PB_CLNT c ON b.CLIENTID = c.CLIENTID AND b.ORGCDE = c.ORGCDE AND b.CLN
 WHERE t.ISACTIVE = 'Y'
   AND b.STATUS = 'Y'
   AND NOT (b.SERIAL LIKE 'Z%' AND c.AGNTCDE = '13655860812')
+  AND b.SERIAL NOT LIKE '%.%'
   AND b.PTDATE >= to_date('{日期_从.Value.Date.ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')
-  AND b.PTDATE < to_date('{日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')";
+  AND b.PTDATE < to_date('{日期_从.Value.Date.AddDays(1).ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')";
 
                 // 业务员筛选
                 if (列表_业务员.CheckedItems.Count > 0)
@@ -190,6 +191,7 @@ FROM V_ORD v
 LEFT JOIN ORD_BAS b ON v.SERIAL = b.SERIAL AND v.CLIENTID = b.CLIENTID AND v.ORGCDE = b.ORGCDE
 WHERE v.STATUS = 'Y'
   AND NOT (v.SERIAL LIKE 'Z%' AND v.AGNTCDE = '13655860812')
+  AND v.SERIAL NOT LIKE '%.%'
   AND v.PTDATE >= to_date('{日期_从.Value.Date.ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')
   AND v.PTDATE < to_date('{日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')";
 
@@ -265,6 +267,7 @@ FROM V_ORD v
 LEFT JOIN ORD_CT ct ON v.SERIAL = ct.SERIAL AND v.CLIENTID = ct.CLIENTID AND v.ORGCDE = ct.ORGCDE
 WHERE v.STATUS = 'Y'
   AND NOT (v.SERIAL LIKE 'Z%' AND v.AGNTCDE = '13655860812')
+  AND v.SERIAL NOT LIKE '%.%'
   AND v.PTDATE >= to_date('{日期_从.Value.Date.ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')
   AND v.PTDATE < to_date('{日期_到.Value.Date.AddDays(1).ToString("yyyy-MM-dd")}', 'yyyy-MM-dd')";
 
